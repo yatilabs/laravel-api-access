@@ -179,7 +179,7 @@ button.btn-close {
                                                     <div>
                                                         <strong>{{ $apiKey->description ?: 'Unnamed Key' }}</strong>
                                                         <br>
-                                                        <code class="text-muted small">{{ $apiKey->key }}</code>
+                                                        <code class="text-muted small">{{ \Illuminate\Support\Str::limit($apiKey->key, 12, '...') }}</code>
                                                     </div>
                                                 </td>
                                                 <td>
@@ -260,8 +260,8 @@ button.btn-close {
                             <div class="mb-3">
                                 <label for="mode" class="form-label">Mode</label>
                                 <select class="form-select form-control" id="mode" name="mode">
-                                    <option value="test">Test Mode (allows localhost)</option>
-                                    <option value="live">Live Mode (strict domain validation)</option>
+                                    <option value="test">Test Mode</option>
+                                    <option value="live">Live Mode</option>
                                 </select>
                             </div>
                         </div>
@@ -316,7 +316,7 @@ button.btn-close {
                             <option value="">Select API Key</option>
                             @foreach ($apiKeysForDropdown as $apiKey)
                                 <option value="{{ $apiKey->id }}">
-                                    {{ $apiKey->description ?: 'Unnamed Key' }} ({{ substr($apiKey->key, 0, 20) }}...)
+                                    {{ $apiKey->description ?: 'Unnamed Key' }} ({{ substr($apiKey->key, 0, 12) }}...)
                                 </option>
                             @endforeach
                         </select>
