@@ -28,7 +28,7 @@ return [
     | You can specify a custom layout file for the management interface.
     | If null, the package will use its standalone layout.
     */
-    'layout' => null, // e.g., 'layouts.app' to use your app's main layout
+    'layout' => "layouts.app", // e.g., 'layouts.app' to use your app's main layout
 
     /*
     |--------------------------------------------------------------------------
@@ -82,7 +82,7 @@ return [
         'log_execution_time' => true,          // Track request processing time
         'log_ip_address' => true,              // Track client IP addresses
         'log_user_agent' => true,              // Track user agents
-        'max_body_size' => 10240,              // Max bytes to log for request/response body (10KB)
+        'max_body_size' => 102400,             // Max bytes to log for request/response body (100KB)
         'retention_days' => 90,                // Days to keep logs before cleanup
         'cleanup_enabled' => true,             // Enable automatic log cleanup
         'sensitive_headers' => [               // Headers to exclude from logging for security

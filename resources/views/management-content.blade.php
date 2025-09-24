@@ -241,11 +241,11 @@ button.btn-close {
                         <div class="d-flex justify-content-between align-items-center mb-3">
                             <h5 class="mb-0">API Request Logs</h5>
                             <div class="d-flex gap-2">
-                                <button type="button" class="btn btn-outline-secondary" onclick="showLogFilters()">
-                                    <i class="fas fa-filter me-2"></i>Filters
+                                <button type="button" class="btn btn-outline-secondary mr-2" onclick="showLogFilters()">
+                                    <i class="fas fa-filter me-2"></i> Filters
                                 </button>
                                 <button type="button" class="btn btn-outline-secondary" onclick="refreshLogs()">
-                                    <i class="fas fa-refresh me-2"></i>Refresh
+                                    <i class="fas fa-refresh me-2"></i> Refresh
                                 </button>
                             </div>
                         </div>
@@ -303,7 +303,7 @@ button.btn-close {
                                         </div>
                                         <div class="col-md-2">
                                             <button type="button" class="btn btn-outline-secondary w-100" onclick="clearLogFilters()">
-                                                <i class="fas fa-times me-2"></i>Clear
+                                                <i class="fas fa-times me-2"></i> Clear
                                             </button>
                                         </div>
                                     </div>
