@@ -90,7 +90,7 @@
     // Show create API key modal
     function showCreateApiKeyModal() {
         document.getElementById('apiKeyModalTitle').textContent = 'Create New API Key';
-        document.getElementById('apiKeySubmitBtn').innerHTML = '<i class="fas fa-save me-2"></i>Create API Key';
+        document.getElementById('apiKeySubmitBtn').innerHTML = '<i class="fas fa-save me-2"></i> Create API Key';
         document.getElementById('apiKeyForm').reset();
         document.getElementById('apiKeyId').value = '';
         document.getElementById('is_active').checked = true;
@@ -104,7 +104,7 @@
             .then(data => {
                 if (data.success) {
                     document.getElementById('apiKeyModalTitle').textContent = 'Edit API Key';
-                    document.getElementById('apiKeySubmitBtn').innerHTML = '<i class="fas fa-save me-2"></i>Update API Key';
+                    document.getElementById('apiKeySubmitBtn').innerHTML = '<i class="fas fa-save me-2"></i> Update API Key';
                     document.getElementById('apiKeyId').value = data.api_key.id;
                     document.getElementById('description').value = data.api_key.description || '';
                     document.getElementById('mode').value = data.api_key.mode;
