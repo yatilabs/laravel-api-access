@@ -1,6 +1,6 @@
 # Laravel API Access Package
 
-A comprehensive Laravel package for managing API keys with domain restrictions, secret authentication, and a beautiful management interface.
+A comprehensive Laravel package for managing API keys with domain restrictions, secret authentication and middleware protection with logging for enabling secure API access for partner applications.
 
 ## ✨ Features
 
