@@ -204,50 +204,18 @@ class ApiAccessService
     }
 
     /**
-     * Test domain matching
+     * Get domain restriction by ID for the current user
      */
-    public function testDomainMatch($apiKeyId, $domain)
+    public function getDomain($id)
     {
-        $apiKey = $this->getApiKey($apiKeyId);
-        
-        $result = [
-            'domain' => $domain,
-            'api_key_name' => $apiKey->description ?: 'Unnamed Key',
-            'mode' => $apiKey->mode,
-            'allowed' => false,
-            'matching_pattern' => null,
-            'reason' => null
-        ];
-
-        // Test mode allows localhost
-        if ($apiKey->mode === 'test' && $this->isLocalhost($domain)) {
-            $result['allowed'] = true;
-            $result['matching_pattern'] = 'localhost (test mode)';
-            $result['reason'] = 'Test mode automatically allows localhost domains';
-            return $result;
-        }
-
-        // Check domain patterns
-        foreach ($apiKey->domains as $domainRestriction) {
-            if ($this->matchesDomainPattern($domain, $domainRestriction->domain_pattern)) {
-                $result['allowed'] = true;
-                $result['matching_pattern'] = $domainRestriction->domain_pattern;
-                $result['reason'] = "Matches pattern: {$domainRestriction->domain_pattern}";
-                return $result;
-            }
-        }
-
-        // No match found
-        if ($apiKey->domains->count() === 0) {
-            $result['reason'] = $apiKey->mode === 'live' 
-                ? 'No domain restrictions set - blocked in live mode'
-                : 'No domain restrictions set - only localhost allowed in test mode';
-        } else {
-            $result['reason'] = 'Domain does not match any configured patterns';
-        }
-
-        return $result;
+        return ApiKeyDomain::with(['apiKey'])
+            ->whereHas('apiKey', function($query) {
+                $query->where('user_id', auth()->id());
+            })
+            ->findOrFail($id);
     }
+
+
 
     /**
      * Validate API key data

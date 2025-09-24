@@ -65,5 +65,8 @@ class ApiAccessServiceProvider extends ServiceProvider
 
         // Register the service
         $this->app->singleton(\Yatilabs\ApiAccess\Services\ApiAccessService::class);
+
+        // Load routes
+        $this->loadRoutesFrom(__DIR__ . '/routes.php');
     }
 }
