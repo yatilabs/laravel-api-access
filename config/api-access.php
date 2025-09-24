@@ -3,47 +3,90 @@
 return [
     /*
     |--------------------------------------------------------------------------
-    | Default API Configuration
+    | API Access Configuration
     |--------------------------------------------------------------------------
     |
-    | This configuration will be used as default settings for third-party
-    | API access. You can override these settings per API endpoint.
+    | This configuration file contains settings for the API Access package.
+    | You can modify these values to customize the behavior of the package.
     |
     */
-
-    'default_timeout' => 30,
-    'default_retry_attempts' => 3,
-    'default_retry_delay' => 1000, // milliseconds
 
     /*
     |--------------------------------------------------------------------------
-    | Rate Limiting
+    | Default Settings
     |--------------------------------------------------------------------------
-    |
-    | Configure rate limiting for API requests to prevent hitting third-party
-    | API limits and to manage request throttling.
-    |
     */
+    'default_mode' => env('API_ACCESS_DEFAULT_MODE', 'test'),
+    'key_prefix' => env('API_ACCESS_KEY_PREFIX', 'ak_'),
+    'key_length' => env('API_ACCESS_KEY_LENGTH', 32),
+    'secret_length' => env('API_ACCESS_SECRET_LENGTH', 64),
 
+    /*
+    |--------------------------------------------------------------------------
+    | Rate Limiting (Future Feature)
+    |--------------------------------------------------------------------------
+    */
     'rate_limiting' => [
-        'enabled' => true,
-        'max_requests_per_minute' => 60,
+        'enabled' => env('API_ACCESS_RATE_LIMITING', false),
+        'storage' => env('API_ACCESS_RATE_STORAGE', 'database'), // database, cache
+        'default_hourly_limit' => env('API_ACCESS_DEFAULT_HOURLY_LIMIT', 1000),
+        'default_daily_limit' => env('API_ACCESS_DEFAULT_DAILY_LIMIT', 10000),
     ],
 
     /*
     |--------------------------------------------------------------------------
-    | Caching
+    | Security Settings
     |--------------------------------------------------------------------------
-    |
-    | Enable caching for API responses to improve performance and reduce
-    | the number of requests to third-party APIs.
-    |
     */
+    'hash_secrets' => env('API_ACCESS_HASH_SECRETS', true),
+    'log_requests' => env('API_ACCESS_LOG_REQUESTS', true),
+    'enforce_https' => env('API_ACCESS_ENFORCE_HTTPS', false),
 
-    'cache' => [
-        'enabled' => true,
-        'ttl' => 300, // seconds
-        'prefix' => 'api_access_',
+    /*
+    |--------------------------------------------------------------------------
+    | Database Settings
+    |--------------------------------------------------------------------------
+    */
+    'table_prefix' => env('API_ACCESS_TABLE_PREFIX', ''),
+    'connection' => env('API_ACCESS_DB_CONNECTION', null),
+
+    /*
+    |--------------------------------------------------------------------------
+    | View Settings
+    |--------------------------------------------------------------------------
+    */
+    'views' => [
+        'layout' => env('API_ACCESS_LAYOUT', null), // Custom layout for views
+        'pagination_size' => env('API_ACCESS_PAGINATION_SIZE', 15),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Authentication Methods
+    |--------------------------------------------------------------------------
+    | Configure which authentication methods are enabled
+    */
+    'auth_methods' => [
+        'bearer_token' => true,
+        'custom_headers' => true,
+        'query_params' => true,
+        'request_body' => true,
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Localhost Domains (Test Mode)
+    |--------------------------------------------------------------------------
+    | Domains that are automatically allowed in test mode
+    */
+    'localhost_domains' => [
+        'localhost',
+        '127.0.0.1',
+        '::1',
+        '0.0.0.0',
+        '*.test',
+        '*.local',
+        '*.dev',
     ],
 
     /*
@@ -55,7 +98,6 @@ return [
     | and monitoring purposes.
     |
     */
-
     'logging' => [
         'enabled' => true,
         'log_requests' => true,

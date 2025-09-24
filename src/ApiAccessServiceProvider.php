@@ -42,6 +42,19 @@ class ApiAccessServiceProvider extends ServiceProvider
             __DIR__ . '/../database/migrations' => database_path('migrations'),
         ], 'migrations');
 
+        // Publish assets (CSS)
+        $this->publishes([
+            __DIR__ . '/../resources/assets' => public_path('vendor/yatilabs/api-access'),
+        ], 'assets');
+
+        // Publish views
+        $this->publishes([
+            __DIR__ . '/../resources/views' => resource_path('views/vendor/api-access'),
+        ], 'views');
+
+        // Load views
+        $this->loadViewsFrom(__DIR__ . '/../resources/views', 'api-access');
+
         // Load migrations when running in console
         if ($this->app->runningInConsole()) {
             $this->loadMigrationsFrom(__DIR__ . '/../database/migrations');
@@ -49,5 +62,8 @@ class ApiAccessServiceProvider extends ServiceProvider
 
         // Register middleware
         $this->app['router']->aliasMiddleware('api.key', \Yatilabs\ApiAccess\Middleware\VerifyApiKey::class);
+
+        // Register the service
+        $this->app->singleton(\Yatilabs\ApiAccess\Services\ApiAccessService::class);
     }
 }
