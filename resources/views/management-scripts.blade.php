@@ -3,15 +3,6 @@
 <!-- jQuery for AJAX requests -->
 <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
 
-<!-- API Access Management Styles (only needed when using     // Delete domain
-    window.deleteDomain = function(domainId) {
-        if (confirm('Are you sure you want to delete this domain?')) {
-            fetch(`{{ config('api-access.routes.prefix', 'api-access') }}/domains/${domainId}/delete`, {
-                method: 'POST',
-                headers: {
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-                }
-            })yout) -->
 @if(config('api-access.layout'))
 <style>
     .api-key-value, .secret-value {
@@ -34,11 +25,7 @@
     .mode-badge {
         font-size: 0.75rem;
     }
-    
-    .table th {
-        border-top: none;
-    }
-    
+
     .card {
         box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
     }
@@ -374,4 +361,359 @@
             toast.remove();
         });
     }
+
+    // =====================================
+    // LOGS FUNCTIONALITY - START
+    // =====================================
+
+    // Global variables for logs
+    let currentPage = 1;
+    let currentFilters = {};
+    let logFiltersData = {};
+    let logDetailModal = null;
+
+    // Initialize logs modal
+    document.addEventListener('DOMContentLoaded', function() {
+        if (document.getElementById('logDetailModal')) {
+            logDetailModal = new bootstrap.Modal(document.getElementById('logDetailModal'));
+        }
+    });
+
+    // Load logs when tab is clicked
+    function loadLogs(page = 1) {
+        currentPage = page;
+        const logsLoading = document.getElementById('logsLoading');
+        const logsTableContainer = document.getElementById('logsTableContainer');
+        const noLogsMessage = document.getElementById('noLogsMessage');
+        const logsDisabled = document.getElementById('logsDisabled');
+
+        if (logsLoading) logsLoading.classList.remove('d-none');
+        if (logsTableContainer) logsTableContainer.classList.add('d-none');
+        if (noLogsMessage) noLogsMessage.classList.add('d-none');
+        if (logsDisabled) logsDisabled.classList.add('d-none');
+
+        const params = new URLSearchParams({
+            page: page,
+            per_page: 25,
+            ...currentFilters
+        });
+
+        fetch(`{{ config('api-access.routes.prefix', 'api-access') }}/logs?${params}`)
+            .then(response => response.json())
+            .then(data => {
+                if (logsLoading) logsLoading.classList.add('d-none');
+
+                if (!data.logs_enabled) {
+                    if (logsDisabled) logsDisabled.classList.remove('d-none');
+                    return;
+                }
+
+                if (data.success && data.data.length > 0) {
+                    populateLogsTable(data.data);
+                    setupLogsPagination(data);
+                    if (logsTableContainer) logsTableContainer.classList.remove('d-none');
+                } else {
+                    if (noLogsMessage) noLogsMessage.classList.remove('d-none');
+                }
+            })
+            .catch(error => {
+                if (logsLoading) logsLoading.classList.add('d-none');
+                showToast('Error', 'Failed to load logs', 'error');
+            });
+    }
+
+    function populateLogsTable(logs) {
+        const tbody = document.getElementById('logsTableBody');
+        if (!tbody) return;
+        
+        tbody.innerHTML = '';
+
+        logs.forEach(log => {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td>
+                    <div>${log.created_at}</div>
+                    <small class="text-muted">${log.client_info || log.ip_address}</small>
+                </td>
+                <td>
+                    <span class="badge bg-secondary">${log.method}</span>
+                </td>
+                <td>
+                    <div class="text-truncate" style="max-width: 200px;" title="${log.url}">
+                        ${log.url}
+                    </div>
+                </td>
+                <td>
+                    <div>${log.ip_address}</div>
+                    ${log.user_agent ? `<small class="text-muted text-truncate d-block" style="max-width: 150px;" title="${log.user_agent}">${log.user_agent}</small>` : ''}
+                </td>
+                <td>
+                    <span class="badge bg-${log.status_color}">${log.response_status}</span>
+                    ${log.has_error ? '<i class="fas fa-exclamation-triangle text-warning ms-1"></i>' : ''}
+                </td>
+                <td>
+                    ${log.api_key ? `
+                        <div>
+                            <strong>${log.api_key.description}</strong>
+                            <br>
+                            <code class="small">${log.api_key.key_preview}</code>
+                        </div>
+                    ` : `
+                        <span class="badge bg-${log.is_authenticated ? 'success' : 'danger'}">
+                            ${log.is_authenticated ? 'Authenticated' : 'Failed Auth'}
+                        </span>
+                    `}
+                </td>
+                <td>
+                    <div>${log.formatted_execution_time}</div>
+                </td>
+                <td>
+                    <button class="btn btn-sm btn-outline-info" onclick="showLogDetail(${log.id})" title="View Details">
+                        <i class="fas fa-eye"></i>
+                    </button>
+                </td>
+            `;
+            tbody.appendChild(row);
+        });
+    }
+
+    function setupLogsPagination(data) {
+        const paginationContainer = document.getElementById('logsPagination');
+        if (!paginationContainer) return;
+        
+        paginationContainer.innerHTML = '';
+
+        if (data.last_page <= 1) return;
+
+        const pagination = document.createElement('nav');
+        pagination.innerHTML = `
+            <ul class="pagination pagination-sm">
+                <li class="page-item ${data.current_page === 1 ? 'disabled' : ''}">
+                    <a class="page-link" href="#" onclick="loadLogs(${data.current_page - 1})">Previous</a>
+                </li>
+                ${generatePageNumbers(data.current_page, data.last_page)}
+                <li class="page-item ${data.current_page === data.last_page ? 'disabled' : ''}">
+                    <a class="page-link" href="#" onclick="loadLogs(${data.current_page + 1})">Next</a>
+                </li>
+            </ul>
+        `;
+
+        paginationContainer.appendChild(pagination);
+    }
+
+    function generatePageNumbers(currentPage, lastPage) {
+        let pages = '';
+        const maxPages = 5;
+        let startPage = Math.max(1, currentPage - Math.floor(maxPages / 2));
+        let endPage = Math.min(lastPage, startPage + maxPages - 1);
+
+        if (endPage - startPage < maxPages - 1) {
+            startPage = Math.max(1, endPage - maxPages + 1);
+        }
+
+        for (let i = startPage; i <= endPage; i++) {
+            pages += `
+                <li class="page-item ${i === currentPage ? 'active' : ''}">
+                    <a class="page-link" href="#" onclick="loadLogs(${i})">${i}</a>
+                </li>
+            `;
+        }
+
+        return pages;
+    }
+
+    function showLogFilters() {
+        const filtersContainer = document.getElementById('logFilters');
+        if (!filtersContainer) return;
+        
+        if (filtersContainer.classList.contains('d-none')) {
+            loadLogFiltersData();
+            filtersContainer.classList.remove('d-none');
+        } else {
+            filtersContainer.classList.add('d-none');
+        }
+    }
+
+    function loadLogFiltersData() {
+        fetch(`{{ config('api-access.routes.prefix', 'api-access') }}/logs/filters/options`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    logFiltersData = data.filters;
+                    populateFilterDropdowns();
+                }
+            })
+            .catch(error => {
+                showToast('Error', 'Failed to load filter options', 'error');
+            });
+    }
+
+    function populateFilterDropdowns() {
+        // Populate API Keys dropdown
+        const apiKeySelect = document.getElementById('filter_api_key_id');
+        if (apiKeySelect && logFiltersData.api_keys) {
+            apiKeySelect.innerHTML = '<option value="">All API Keys</option>';
+            logFiltersData.api_keys.forEach(apiKey => {
+                apiKeySelect.innerHTML += `<option value="${apiKey.id}">${apiKey.label}</option>`;
+            });
+        }
+
+        // Populate Methods dropdown
+        const methodSelect = document.getElementById('filter_method');
+        if (methodSelect && logFiltersData.methods) {
+            methodSelect.innerHTML = '<option value="">All Methods</option>';
+            logFiltersData.methods.forEach(method => {
+                methodSelect.innerHTML += `<option value="${method}">${method}</option>`;
+            });
+        }
+
+        // Populate Status Codes dropdown
+        const statusSelect = document.getElementById('filter_status_code');
+        if (statusSelect && logFiltersData.status_codes) {
+            statusSelect.innerHTML = '<option value="">All Status</option>';
+            logFiltersData.status_codes.forEach(status => {
+                statusSelect.innerHTML += `<option value="${status}">${status}</option>`;
+            });
+        }
+    }
+
+    function applyLogFilters(event) {
+        if (event) event.preventDefault();
+        const form = document.getElementById('logFilterForm');
+        if (!form) return;
+        
+        const formData = new FormData(form);
+        currentFilters = {};
+
+        for (let [key, value] of formData.entries()) {
+            if (value.trim() !== '') {
+                currentFilters[key] = value;
+            }
+        }
+
+        loadLogs(1);
+    }
+
+    function clearLogFilters() {
+        const form = document.getElementById('logFilterForm');
+        if (form) {
+            form.reset();
+            currentFilters = {};
+            loadLogs(1);
+        }
+    }
+
+    function refreshLogs() {
+        loadLogs(currentPage);
+    }
+
+    function showLogDetail(logId) {
+        fetch(`{{ config('api-access.routes.prefix', 'api-access') }}/logs/${logId}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    populateLogDetailModal(data.log);
+                    if (logDetailModal) {
+                        logDetailModal.show();
+                    }
+                } else {
+                    showToast('Error', data.message, 'error');
+                }
+            })
+            .catch(error => {
+                showToast('Error', 'Failed to load log details', 'error');
+            });
+    }
+
+    function populateLogDetailModal(log) {
+        const content = document.getElementById('logDetailContent');
+        if (!content) return;
+        
+        content.innerHTML = `
+            <div class="row">
+                <div class="col-md-6">
+                    <h6><i class="fas fa-info-circle me-2"></i> Request Information</h6>
+                    <table class="table table-bordered table-striped table-sm">
+                        <tr><th>Time:</th><td class="text-break small">${log.created_at}</td></tr>
+                        <tr><th>Request ID:</th><td class="text-break small">${log.request_id || 'N/A'}</td></tr>
+                        <tr><th>Method:</th><td class="text-break small"><span class="badge bg-secondary">${log.method}</span></td></tr>
+                        <tr><th>URL:</th><td class="text-break small">${log.url}</td></tr>
+                        <tr><th>Route:</th><td class="text-break small">${log.route || 'N/A'}</td></tr>
+                        <tr><th>IP Address:</th><td class="text-break small">${log.ip_address}</td></tr>
+                        <tr><th>User Agent:</th><td class="text-break small">${log.user_agent || 'N/A'}</td></tr>
+                    </table>
+                </div>
+                <div class="col-md-6">
+                    <h6><i class="fas fa-chart-bar me-2"></i> Response Information</h6>
+                    <table class="table table-bordered table-striped table-sm">
+                        <tr><th>Status:</th><td class="text-break small"><span class="badge bg-${getStatusColor(log.response_status)}">${log.response_status}</span></td></tr>
+                        <tr><th>Duration:</th><td class="text-break small">${log.formatted_execution_time}</td></tr>
+                        <tr><th>Authenticated:</th><td class="text-break small"><span class="badge bg-${log.is_authenticated ? 'success' : 'danger'}">${log.is_authenticated ? 'Yes' : 'No'}</span></td></tr>
+                        ${log.api_key ? `
+                            <tr><th>API Key:</th><td>
+                                <div><strong>${log.api_key.description}</strong></div>
+                                <div><code>${log.api_key.key}</code></div>
+                                <div><small class="text-muted">Mode: ${log.api_key.mode.toUpperCase()}</small></div>
+                            </td></tr>
+                        ` : ''}
+                        ${log.error_message ? `<tr><th>Error:</th><td class="text-danger small">${log.error_message}</td></tr>` : ''}
+                    </table>
+                </div>
+            </div>
+
+            ${log.query_parameters && Object.keys(log.query_parameters).length > 0 ? `
+                <div class="mt-3">
+                    <h6><i class="fas fa-question-circle me-2"></i>Query Parameters</h6>
+                    <pre class="bg-light p-3 rounded small"><code>${JSON.stringify(log.query_parameters, null, 2)}</code></pre>
+                </div>
+            ` : ''}
+
+            ${log.request_headers && Object.keys(log.request_headers).length > 0 ? `
+                <div class="mt-3">
+                    <h6><i class="fas fa-arrow-up me-2"></i> Request Headers</h6>
+                    <pre class="bg-light p-3 rounded small"><code>${JSON.stringify(log.request_headers, null, 2)}</code></pre>
+                </div>
+            ` : ''}
+
+            ${log.request_body ? `
+                <div class="mt-3">
+                    <h6><i class="fas fa-file-code me-2"></i> Request Body</h6>
+                    <pre class="bg-light p-3 rounded text-break small"><code>${log.request_body}</code></pre>
+                </div>
+            ` : ''}
+
+            ${log.response_headers && Object.keys(log.response_headers).length > 0 ? `
+                <div class="mt-3">
+                    <h6><i class="fas fa-arrow-down me-2"></i> Response Headers</h6>
+                    <pre class="bg-light p-3 rounded small"><code>${JSON.stringify(log.response_headers, null, 2)}</code></pre>
+                </div>
+            ` : ''}
+
+            ${log.response_body ? `
+                <div class="mt-3">
+                    <h6><i class="fas fa-file-alt me-2"></i> Response Body</h6>
+                    <pre class="bg-light p-3 rounded text-break small"><code>${log.response_body}</code></pre>
+                </div>
+            ` : ''}
+
+            ${log.error_trace ? `
+                <div class="mt-3">
+                    <h6><i class="fas fa-bug me-2"></i> Error Trace</h6>
+                    <pre class="bg-light p-3 rounded text-break small"><code>${log.error_trace}</code></pre>
+                </div>
+            ` : ''}
+        `;
+    }
+
+    function getStatusColor(status) {
+        if (status >= 200 && status < 300) return 'success';
+        if (status >= 300 && status < 400) return 'warning';
+        if (status >= 400 && status < 500) return 'danger';
+        if (status >= 500) return 'dark';
+        return 'secondary';
+    }
+
+    // =====================================
+    // LOGS FUNCTIONALITY - END
+    // =====================================
 </script>

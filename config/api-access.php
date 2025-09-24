@@ -28,7 +28,7 @@ return [
     | You can specify a custom layout file for the management interface.
     | If null, the package will use its standalone layout.
     */
-    'layout' => null, // e.g., 'layouts.app' to use your app's main layout
+    'layout' => "layouts.app", // e.g., 'layouts.app' to use your app's main layout
 
     /*
     |--------------------------------------------------------------------------
@@ -66,14 +66,38 @@ return [
     |--------------------------------------------------------------------------
     | Logging Configuration
     |--------------------------------------------------------------------------
-    | Configure logging for API requests and responses for debugging
-    | and monitoring purposes.
+    | Configure comprehensive logging for API requests and responses.
+    | This includes request/response data, timing, errors, and security info.
     |--------------------------------------------------------------------------
     */
     'logging' => [
-        'enabled' => true,
-        'log_requests' => true,
-        'log_responses' => true,
-        'log_errors' => true,
+        'enabled' => true,                     // Master switch for logging
+        'log_requests' => true,                // Log incoming request data
+        'log_responses' => true,               // Log response data  
+        'log_errors' => true,                  // Log errors and failures
+        'log_headers' => true,                 // Include request/response headers
+        'log_request_body' => true,            // Include request body content
+        'log_response_body' => true,           // Include response body content
+        'log_query_parameters' => true,        // Include query string parameters
+        'log_execution_time' => true,          // Track request processing time
+        'log_ip_address' => true,              // Track client IP addresses
+        'log_user_agent' => true,              // Track user agents
+        'max_body_size' => 102400,             // Max bytes to log for request/response body (100KB)
+        'retention_days' => 90,                // Days to keep logs before cleanup
+        'cleanup_enabled' => true,             // Enable automatic log cleanup
+        'sensitive_headers' => [               // Headers to exclude from logging for security
+            'authorization',
+            'x-api-key',
+            'x-api-secret',
+            'cookie',
+            'set-cookie',
+        ],
+        'sensitive_fields' => [                // Request/response fields to mask in logs
+            'password',
+            'secret',
+            'token',
+            'api_key',
+            'api_secret',
+        ],
     ],
 ];

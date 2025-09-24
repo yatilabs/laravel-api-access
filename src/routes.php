@@ -33,4 +33,9 @@ Route::group([
     Route::post('/domains/{id}/update', [DomainController::class, 'update'])->name('domains.update');
     Route::post('/domains/{id}/delete', [DomainController::class, 'destroy'])->name('domains.destroy');
     
+    // API Logs
+    Route::get('/logs', [ApiKeyController::class, 'logs'])->name('logs.index');
+    Route::get('/logs/{id}', [ApiKeyController::class, 'logDetail'])->name('logs.detail');
+    Route::get('/logs/filters/options', [ApiKeyController::class, 'logFilters'])->name('logs.filters');
+    
 });

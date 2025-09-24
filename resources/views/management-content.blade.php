@@ -11,8 +11,8 @@ button.btn-close {
     <div class="col-12">
         <div class="card">
             <div class="card-header bg-white">
-                <h4 class="mb-0">API Keys</h4>
-                <p class="text-muted mb-0">Manage your API keys and domains</p>
+                <h5 class="mb-0">API Access</h5>
+                <p class="text-muted small mb-0">Manage your API keys, domains and logs</p>
             </div>
 
             <div class="card-body">
@@ -26,6 +26,11 @@ button.btn-close {
                     <li class="nav-item">
                         <a class="nav-link" data-bs-toggle="tab" href="#domains">
                             <i class="fas fa-globe me-2"></i> Domains
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" data-bs-toggle="tab" href="#logs" onclick="loadLogs()">
+                            <i class="fas fa-list-alt me-2"></i> Logs
                         </a>
                     </li>
                 </ul>
@@ -230,6 +235,130 @@ button.btn-close {
                             </div>
                         @endif
                     </div>
+
+                    <!-- Logs Tab -->
+                    <div class="tab-pane fade" id="logs">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h5 class="mb-0">API Request Logs</h5>
+                            <div class="d-flex gap-2">
+                                <button type="button" class="btn btn-outline-secondary mr-2" onclick="showLogFilters()">
+                                    <i class="fas fa-filter me-2"></i> Filters
+                                </button>
+                                <button type="button" class="btn btn-outline-secondary" onclick="refreshLogs()">
+                                    <i class="fas fa-refresh me-2"></i> Refresh
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Filter Section -->
+                        <div class="card mb-3 d-none" id="logFilters">
+                            <div class="card-body">
+                                <form id="logFilterForm" onsubmit="applyLogFilters(event)">
+                                    <div class="row g-3">
+                                        <div class="col-md-3">
+                                            <label for="filter_api_key_id" class="form-label">API Key</label>
+                                            <select class="form-select form-control" id="filter_api_key_id" name="api_key_id">
+                                                <option value="">All API Keys</option>
+                                            </select>
+                                        </div>
+                                        <div class="col-md-2">
+                                            <label for="filter_method" class="form-label">Method</label>
+                                            <select class="form-select form-control" id="filter_method" name="method">
+                                                <option value="">All Methods</option>
+                                            </select>
+                                        </div>
+                                        <div class="col-md-2">
+                                            <label for="filter_status_code" class="form-label">Status</label>
+                                            <select class="form-select form-control" id="filter_status_code" name="status_code">
+                                                <option value="">All Status</option>
+                                            </select>
+                                        </div>
+                                        <div class="col-md-2">
+                                            <label for="filter_date_from" class="form-label">From Date</label>
+                                            <input type="date" class="form-control" id="filter_date_from" name="date_from">
+                                        </div>
+                                        <div class="col-md-2">
+                                            <label for="filter_date_to" class="form-label">To Date</label>
+                                            <input type="date" class="form-control" id="filter_date_to" name="date_to">
+                                        </div>
+                                        <div class="col-md-1">
+                                            <label class="form-label">&nbsp;</label>
+                                            <div class="d-grid">
+                                                <button type="submit" class="btn btn-primary">
+                                                    <i class="fas fa-search"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="row mt-2">
+                                        <div class="col-md-3">
+                                            <input type="text" class="form-control" id="filter_ip_address" name="ip_address" placeholder="IP Address">
+                                        </div>
+                                        <div class="col-md-2">
+                                            <select class="form-select form-control" id="filter_authenticated" name="authenticated">
+                                                <option value="">All Requests</option>
+                                                <option value="1">Authenticated</option>
+                                                <option value="0">Failed Auth</option>
+                                            </select>
+                                        </div>
+                                        <div class="col-md-2">
+                                            <button type="button" class="btn btn-outline-secondary w-100" onclick="clearLogFilters()">
+                                                <i class="fas fa-times me-2"></i> Clear
+                                            </button>
+                                        </div>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+
+                        <!-- Logs Loading State -->
+                        <div id="logsLoading" class="text-center py-5">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                            <div class="mt-2">Loading logs...</div>
+                        </div>
+
+                        <!-- Logs Disabled Message -->
+                        <div id="logsDisabled" class="text-center py-5 d-none">
+                            <i class="fas fa-ban text-muted" style="font-size: 3rem;"></i>
+                            <h5 class="text-muted mt-3">Logging Disabled</h5>
+                            <p class="text-muted">API request logging is disabled in the configuration.</p>
+                        </div>
+
+                        <!-- Logs Table -->
+                        <div id="logsTableContainer" class="d-none">
+                            <div class="table-responsive">
+                                <table class="table table-hover">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>Time</th>
+                                            <th>Method</th>
+                                            <th>URL</th>
+                                            <th>IP Address</th>
+                                            <th>Status</th>
+                                            <th>API Key</th>
+                                            <th>Duration</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="logsTableBody">
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            <!-- Pagination -->
+                            <div id="logsPagination" class="d-flex justify-content-center mt-4">
+                            </div>
+                        </div>
+
+                        <!-- No Logs Message -->
+                        <div id="noLogsMessage" class="text-center py-5 d-none">
+                            <i class="fas fa-list-alt text-muted" style="font-size: 3rem;"></i>
+                            <h5 class="text-muted mt-3">No Logs Found</h5>
+                            <p class="text-muted">No API request logs match your current filters.</p>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -325,11 +454,12 @@ button.btn-close {
                     <div class="mb-3">
                         <label for="domain_pattern" class="form-label">Domain Pattern</label>
                         <input type="text" class="form-control" id="domain_pattern" name="domain_pattern"
-                            placeholder="example.com or *.example.com" required>
+                            placeholder="example.com or *.example.com or 123.456.789.0" required>
                         <div class="form-text">
                             <strong>Examples:</strong><br>
                             • <code>example.com</code> - Exact match<br>
                             • <code>*.example.com</code> - Subdomain wildcard<br>
+                            • <code>123.456.789.0</code> - IP address<br>
                             • <code>*</code> - Match any domain
                         </div>
                     </div>
@@ -374,6 +504,26 @@ button.btn-close {
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-primary" data-bs-dismiss="modal">I've Saved It</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Log Detail Modal -->
+<div class="modal fade" id="logDetailModal" tabindex="-1">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-info-circle me-2"></i> Log Details
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal">X</button>
+            </div>
+            <div class="modal-body" id="logDetailContent">
+                <!-- Content will be loaded dynamically -->
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
             </div>
         </div>
     </div>
