@@ -162,13 +162,13 @@ The package provides these routes automatically:
 
 - `GET /api-access` - Main management interface
 - `POST /api-access/api-keys` - Create API key
-- `PUT /api-access/api-keys/{id}` - Update API key
-- `DELETE /api-access/api-keys/{id}` - Delete API key
+- `POST /api-access/api-keys/{id}/update` - Update API key
+- `POST /api-access/api-keys/{id}/delete` - Delete API key
 - `POST /api-access/api-keys/{id}/regenerate-secret` - Regenerate secret
 - `POST /api-access/api-keys/{id}/toggle-status` - Toggle active status
 - `POST /api-access/domains` - Create domain restriction
-- `PUT /api-access/domains/{id}` - Update domain restriction
-- `DELETE /api-access/domains/{id}` - Delete domain restriction
+- `POST /api-access/domains/{id}/update` - Update domain restriction
+- `POST /api-access/domains/{id}/delete` - Delete domain restriction
 
 ### Navigation
 

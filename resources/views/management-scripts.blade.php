@@ -3,7 +3,15 @@
 <!-- jQuery for AJAX requests -->
 <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
 
-<!-- API Access Management Styles (only needed when using custom layout) -->
+<!-- API Access Management Styles (only needed when using     // Delete domain
+    window.deleteDomain = function(domainId) {
+        if (confirm('Are you sure you want to delete this domain?')) {
+            fetch(`{{ config('api-access.routes.prefix', 'api-access') }}/domains/${domainId}/delete`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                }
+            })yout) -->
 @if(config('api-access.layout'))
 <style>
     .api-key-value, .secret-value {
@@ -119,24 +127,22 @@
     }
 
     // Submit API key form
-    function submitApiKeyForm(event) {
-        event.preventDefault();
-        const formData = new FormData(document.getElementById('apiKeyForm'));
-        const isEdit = document.getElementById('apiKeyId').value !== '';
-        
-        const url = isEdit ? 
-            `{{ config('api-access.routes.prefix', 'api-access') }}/api-keys/${document.getElementById('apiKeyId').value}` :
-            `{{ config('api-access.routes.prefix', 'api-access') }}/api-keys`;
-        
-        const method = isEdit ? 'PUT' : 'POST';
-
-        fetch(url, {
-            method: method,
-            body: formData,
-            headers: {
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-            }
-        })
+        window.submitApiKeyForm = function(event) {
+            event.preventDefault();
+            const formData = new FormData(document.getElementById('apiKeyForm'));
+            const isEdit = document.getElementById('apiKeyId').value !== '';
+            
+            const url = isEdit ? 
+                `{{ config('api-access.routes.prefix', 'api-access') }}/api-keys/${document.getElementById('apiKeyId').value}/update` :
+                `{{ config('api-access.routes.prefix', 'api-access') }}/api-keys`;
+            
+            fetch(url, {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                }
+            })
         .then(response => response.json())
         .then(data => {
             if (data.success) {
@@ -190,19 +196,17 @@
     }
 
     // Submit domain form
-    function submitDomainForm(event) {
+    window.submitDomainForm = function(event) {
         event.preventDefault();
         const formData = new FormData(document.getElementById('domainForm'));
         const isEdit = document.getElementById('domainId').value !== '';
         
         const url = isEdit ? 
-            `{{ config('api-access.routes.prefix', 'api-access') }}/domains/${document.getElementById('domainId').value}` :
+            `{{ config('api-access.routes.prefix', 'api-access') }}/domains/${document.getElementById('domainId').value}/update` :
             `{{ config('api-access.routes.prefix', 'api-access') }}/domains`;
         
-        const method = isEdit ? 'PUT' : 'POST';
-
         fetch(url, {
-            method: method,
+            method: 'POST',
             body: formData,
             headers: {
                 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
