@@ -11,8 +11,8 @@ button.btn-close {
     <div class="col-12">
         <div class="card">
             <div class="card-header bg-white">
-                <h4 class="mb-0">API Keys</h4>
-                <p class="text-muted mb-0">Manage your API keys and domains</p>
+                <h5 class="mb-0">API Access</h5>
+                <p class="text-muted small mb-0">Manage your API keys, domains and logs</p>
             </div>
 
             <div class="card-body">
@@ -454,11 +454,12 @@ button.btn-close {
                     <div class="mb-3">
                         <label for="domain_pattern" class="form-label">Domain Pattern</label>
                         <input type="text" class="form-control" id="domain_pattern" name="domain_pattern"
-                            placeholder="example.com or *.example.com" required>
+                            placeholder="example.com or *.example.com or 123.456.789.0" required>
                         <div class="form-text">
                             <strong>Examples:</strong><br>
                             • <code>example.com</code> - Exact match<br>
                             • <code>*.example.com</code> - Subdomain wildcard<br>
+                            • <code>123.456.789.0</code> - IP address<br>
                             • <code>*</code> - Match any domain
                         </div>
                     </div>
