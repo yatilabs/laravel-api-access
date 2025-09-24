@@ -3,12 +3,5 @@
 composer.lock
 .env
 .env.local
-.env.testing
 .DS_Store
 Thumbs.db
-/coverage/
-/.phpunit.cache
-/.phpunit.result.cache
-/.php_cs.cache
-/.php-cs-fixer.cache
-.phpstan.cache
