@@ -165,7 +165,7 @@
     // Show create domain modal
     function showCreateDomainModal() {
         document.getElementById('domainModalTitle').textContent = 'Add Domain Restriction';
-        document.getElementById('domainSubmitBtn').innerHTML = '<i class="fas fa-save me-2"></i>Add Restriction';
+        document.getElementById('domainSubmitBtn').innerHTML = '<i class="fas fa-save me-2"></i> Add Restriction';
         document.getElementById('domainForm').reset();
         document.getElementById('domainId').value = '';
         domainModal.show();
@@ -178,7 +178,7 @@
             .then(data => {
                 if (data.success) {
                     document.getElementById('domainModalTitle').textContent = 'Edit Domain Restriction';
-                    document.getElementById('domainSubmitBtn').innerHTML = '<i class="fas fa-save me-2"></i>Update Restriction';
+                    document.getElementById('domainSubmitBtn').innerHTML = '<i class="fas fa-save me-2"></i> Update Restriction';
                     document.getElementById('domainId').value = data.domain.id;
                     document.getElementById('api_key_id').value = data.domain.api_key_id;
                     document.getElementById('domain_pattern').value = data.domain.domain_pattern;
