@@ -37,10 +37,14 @@ class ApiAccessServiceProvider extends ServiceProvider
             __DIR__ . '/../config/api-access.php' => config_path('api-access.php'),
         ], 'config');
 
-        // You can also publish other assets like migrations, views, etc.
-        // Example for migrations:
-        // $this->publishes([
-        //     __DIR__ . '/../database/migrations' => database_path('migrations'),
-        // ], 'migrations');
+        // Publish migrations
+        $this->publishes([
+            __DIR__ . '/../database/migrations' => database_path('migrations'),
+        ], 'migrations');
+
+        // Load migrations when running in console
+        if ($this->app->runningInConsole()) {
+            $this->loadMigrationsFrom(__DIR__ . '/../database/migrations');
+        }
     }
 }

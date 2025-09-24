@@ -10,6 +10,12 @@ abstract class TestCase extends OrchestraTestCase
     protected function setUp(): void
     {
         parent::setUp();
+        
+        // Create users table first
+        $this->setUpUsersTable();
+        
+        // Run the package migrations
+        $this->artisan('migrate')->run();
     }
 
     protected function getPackageProviders($app)
@@ -28,5 +34,29 @@ abstract class TestCase extends OrchestraTestCase
             'database' => ':memory:',
             'prefix' => '',
         ]);
+    }
+
+    /**
+     * Define database migrations.
+     */
+    protected function defineDatabaseMigrations()
+    {
+        $this->loadMigrationsFrom(__DIR__ . '/../database/migrations');
+    }
+
+    /**
+     * Set up the users table for testing.
+     */
+    protected function setUpUsersTable()
+    {
+        $this->app['db']->connection()->getSchemaBuilder()->create('users', function ($table) {
+            $table->id();
+            $table->string('name');
+            $table->string('email')->unique();
+            $table->timestamp('email_verified_at')->nullable();
+            $table->string('password');
+            $table->rememberToken();
+            $table->timestamps();
+        });
     }
 }
