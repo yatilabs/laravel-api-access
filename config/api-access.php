@@ -23,6 +23,15 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | View Settings
+    |--------------------------------------------------------------------------
+    | You can specify a custom layout file for the management interface.
+    | If null, the package will use its standalone layout.
+    */
+    'layout' => null, // e.g., 'layouts.app' to use your app's main layout
+
+    /*
+    |--------------------------------------------------------------------------
     | Routes Configuration
     |--------------------------------------------------------------------------
     */
@@ -34,18 +43,14 @@ return [
 
     /*
     |--------------------------------------------------------------------------
-    | View Settings
+    | Test Mode Allowed Domains
     |--------------------------------------------------------------------------
-    | You can specify a custom layout file for the management interface.
-    | If null, the package will use its standalone layout.
-    */
-    'layout' => null, // e.g., 'layouts.app' to use your app's main layout
-
-    /*
+    | These domains are automatically allowed when API keys are in test mode.
+    | Wildcard patterns are supported (e.g., *.test, *.local).
+    |
+    | This makes local development easier by allowing common development
+    | domains without manually adding domain restrictions.
     |--------------------------------------------------------------------------
-    | Localhost Domains (Test Mode)
-    |--------------------------------------------------------------------------
-    | Domains that are automatically allowed in test mode
     */
     'localhost_domains' => [
         'localhost',
@@ -59,12 +64,11 @@ return [
 
     /*
     |--------------------------------------------------------------------------
-    | Logging
+    | Logging Configuration
     |--------------------------------------------------------------------------
-    |
     | Configure logging for API requests and responses for debugging
     | and monitoring purposes.
-    |
+    |--------------------------------------------------------------------------
     */
     'logging' => [
         'enabled' => true,

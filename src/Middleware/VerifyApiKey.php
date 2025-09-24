@@ -130,8 +130,8 @@ class VerifyApiKey
     {
         $domain = $this->extractDomain($request);
 
-        // For test mode, allow localhost and 127.0.0.1
-        if ($apiKey->mode === 'test' && $this->isLocalhost($domain)) {
+        // For test mode, allow localhost domains from config
+        if ($apiKey->mode === 'test' && $this->isTestModeDomainAllowed($domain)) {
             return true;
         }
 
@@ -158,21 +158,43 @@ class VerifyApiKey
     }
 
     /**
-     * Check if domain is localhost or 127.0.0.1.
+     * Check if domain is allowed in test mode using config.
      *
      * @param  string  $domain
      * @return bool
      */
-    protected function isLocalhost(string $domain): bool
+    protected function isTestModeDomainAllowed(string $domain): bool
     {
-        $localhostPatterns = [
+        $localhostDomains = config('api-access.localhost_domains', [
             'localhost',
             '127.0.0.1',
             '::1',
             '0.0.0.0',
-        ];
+            '*.test',
+            '*.local',
+            '*.dev',
+        ]);
 
-        return in_array(strtolower($domain), $localhostPatterns);
+        $domain = strtolower($domain);
+
+        foreach ($localhostDomains as $pattern) {
+            $pattern = strtolower($pattern);
+            
+            // Exact match
+            if ($domain === $pattern) {
+                return true;
+            }
+            
+            // Wildcard pattern matching
+            if (str_contains($pattern, '*')) {
+                $regex = '/^' . str_replace(['\*', '\.'], ['.*', '\.'], preg_quote($pattern, '/')) . '$/';
+                if (preg_match($regex, $domain)) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
     }
 
     /**

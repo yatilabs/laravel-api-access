@@ -339,21 +339,40 @@ class ApiAccessService
     }
 
     /**
-     * Check if domain is localhost
+     * Check if domain is allowed in test mode using config
      */
-    protected function isLocalhost($domain)
+    protected function isTestModeDomainAllowed($domain)
     {
-        $localhost_patterns = [
+        $localhostDomains = config('api-access.localhost_domains', [
             'localhost',
             '127.0.0.1',
             '::1',
-            '0.0.0.0'
-        ];
+            '0.0.0.0',
+            '*.test',
+            '*.local',
+            '*.dev',
+        ]);
 
-        return in_array(strtolower($domain), $localhost_patterns) || 
-               preg_match('/^127\.\d+\.\d+\.\d+$/', $domain) ||
-               preg_match('/^192\.168\.\d+\.\d+$/', $domain) ||
-               preg_match('/^10\.\d+\.\d+\.\d+$/', $domain);
+        $domain = strtolower($domain);
+
+        foreach ($localhostDomains as $pattern) {
+            $pattern = strtolower($pattern);
+            
+            // Exact match
+            if ($domain === $pattern) {
+                return true;
+            }
+            
+            // Wildcard pattern matching
+            if (str_contains($pattern, '*')) {
+                $regex = '/^' . str_replace(['\*', '\.'], ['.*', '\.'], preg_quote($pattern, '/')) . '$/';
+                if (preg_match($regex, $domain)) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
     }
 
     /**

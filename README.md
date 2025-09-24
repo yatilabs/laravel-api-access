@@ -333,7 +333,38 @@ The package supports flexible domain patterns:
 - `example.com` - Exact match
 - `*.example.com` - Subdomain wildcard
 - `*` - Match any domain
-- Test mode automatically allows localhost domains
+- Test mode automatically allows domains configured in `localhost_domains` config
+
+### Test Mode Domain Configuration
+
+In test mode, API keys automatically allow domains specified in the `localhost_domains` configuration array. This makes development easier by allowing local development domains without manually adding domain restrictions.
+
+**Default allowed domains in test mode:**
+- `localhost`
+- `127.0.0.1`
+- `::1` (IPv6 localhost)
+- `0.0.0.0`
+- `*.test` (any .test domain)
+- `*.local` (any .local domain)
+- `*.dev` (any .dev domain)
+
+You can customize these in your config file:
+
+```php
+'localhost_domains' => [
+    'localhost',
+    '127.0.0.1',
+    '::1',
+    '0.0.0.0',
+    '*.test',
+    '*.local',
+    '*.dev',
+    'my-custom-dev.domain',
+    '*.staging',
+],
+```
+
+**Note:** Wildcard patterns are supported in the localhost_domains configuration.
 
 ## 🧪 Testing
 
@@ -361,34 +392,50 @@ public function test_api_key_creation()
 
 ```php
 return [
-    'default_mode' => env('API_ACCESS_DEFAULT_MODE', 'test'),
-    'key_prefix' => env('API_ACCESS_KEY_PREFIX', 'ak_'),
-    'key_length' => env('API_ACCESS_KEY_LENGTH', 32),
-    'secret_length' => env('API_ACCESS_SECRET_LENGTH', 64),
+    // Basic Settings
+    'default_mode' => 'test',              // Default mode for new API keys
+    'key_prefix' => 'ak_',                 // Prefix for generated API keys
+    'key_length' => 32,                    // Length of the API key
+    'secret_length' => 64,                 // Length of the API secret
 
+    // Layout Integration
+    'layout' => null,                      // Custom layout file (e.g., 'layouts.app')
+
+    // Routes Configuration  
     'routes' => [
-        'prefix' => env('API_ACCESS_ROUTE_PREFIX', 'api-access'),
-        'middleware' => ['web', 'auth'],
-        'name_prefix' => 'api-access.',
+        'prefix' => 'api-access',          // URL prefix for management interface
+        'middleware' => ['web', 'auth'],   // Middleware for management routes
+        'name_prefix' => 'api-access.',    // Route name prefix
     ],
 
-    'security' => [
-        'hash_secrets' => env('API_ACCESS_HASH_SECRETS', true),
-        'log_requests' => env('API_ACCESS_LOG_REQUESTS', true),
-        'enforce_https' => env('API_ACCESS_ENFORCE_HTTPS', false),
-    ],
-
+    // Test Mode Allowed Domains
+    // These domains are automatically allowed when API keys are in test mode
     'localhost_domains' => [
-        'localhost',
-        '127.0.0.1',
-        '::1',
-        '0.0.0.0',
-        '*.test',
-        '*.local',
-        '*.dev',
+        'localhost',                        // Standard localhost
+        '127.0.0.1',                       // IPv4 loopback
+        '::1',                             // IPv6 loopback
+        '0.0.0.0',                         // Any IPv4 address
+        '*.test',                          // All .test domains (wildcards supported)
+        '*.local',                         // All .local domains
+        '*.dev',                           // All .dev domains
+    ],
+
+    // Logging Configuration
+    'logging' => [
+        'enabled' => true,                 // Enable request logging
+        'log_requests' => true,            // Log incoming requests
+        'log_responses' => true,           // Log responses
+        'log_errors' => true,              // Log errors
     ],
 ];
 ```
+
+### Key Configuration Notes
+
+- **localhost_domains**: Domains automatically allowed for API keys in test mode. Add your custom development domains here.
+- **layout**: Set to integrate with your existing app layout (e.g., 'layouts.app'). Leave null for standalone interface.
+- **routes.prefix**: Change if you need a different URL prefix than 'api-access'.
+- **routes.middleware**: Customize the middleware stack for the management interface.
 
 ## 🤝 Contributing
 
