@@ -171,7 +171,7 @@
                                                         <code>{{ session("new_secret_{$apiKey->id}") }}</code>
                                                     </div>
                                                 @else
-                                                    <small class="text-muted">Secret: ****{{ substr($apiKey->secret_hash, -4) }}</small>
+                                                    <small class="text-muted">Secret: ****{{ substr($apiKey->secret, -4) }}</small>
                                                 @endif
                                             </td>
                                             <td>

@@ -23,18 +23,6 @@ return [
 
     /*
     |--------------------------------------------------------------------------
-    | Rate Limiting (Future Feature)
-    |--------------------------------------------------------------------------
-    */
-    'rate_limiting' => [
-        'enabled' => env('API_ACCESS_RATE_LIMITING', false),
-        'storage' => env('API_ACCESS_RATE_STORAGE', 'database'), // database, cache
-        'default_hourly_limit' => env('API_ACCESS_DEFAULT_HOURLY_LIMIT', 1000),
-        'default_daily_limit' => env('API_ACCESS_DEFAULT_DAILY_LIMIT', 10000),
-    ],
-
-    /*
-    |--------------------------------------------------------------------------
     | Security Settings
     |--------------------------------------------------------------------------
     */

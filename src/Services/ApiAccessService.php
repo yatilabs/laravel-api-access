@@ -55,7 +55,7 @@ class ApiAccessService
             $apiKey = ApiKey::create([
                 'user_id' => auth()->id(),
                 'key' => $key,
-                'secret_hash' => bcrypt($secret),
+                'secret' => $secret,
                 'description' => $data['description'] ?? null,
                 'is_active' => isset($data['is_active']) && $data['is_active'] == '1',
                 'expires_at' => !empty($data['expires_at']) ? $data['expires_at'] : null,
@@ -118,7 +118,7 @@ class ApiAccessService
         
         $newSecret = $this->generateApiSecret();
         $apiKey->update([
-            'secret_hash' => bcrypt($newSecret)
+            'secret' => $newSecret
         ]);
         
         $apiKey->plain_secret = $newSecret;

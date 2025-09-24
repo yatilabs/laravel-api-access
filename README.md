@@ -2,7 +2,7 @@
 
 # Laravel API Access Package
 
-A comprehensive Laravel package for managing API keys with domain restrictions, secret authentication, rate limiting, and a beautiful management interface.
+A comprehensive Laravel package for managing API keys with domain restrictions, secret authentication, and a beautiful management interface.
 
 ## ✨ Features
 
@@ -12,8 +12,6 @@ A comprehensive Laravel package for managing API keys with domain restrictions, 
 - **Test/Live Modes**: Separate environments with different validation rules
 - **Beautiful UI**: Isolated Bootstrap CSS interface that integrates with any Laravel app
 - **Service-Based Architecture**: Minimal controller code needed in your app
-- **Rate Limiting**: Per-hour and per-day request limits (coming soon)
-- **IP Filtering**: Allow/block specific IP addresses (coming soon)
 - **Usage Tracking**: Track API key usage and last used timestamps
 
 ## 🚀 Quick Installation
@@ -435,10 +433,6 @@ Set these in your `.env`:
 API_KEY_LENGTH=32
 API_SECRET_LENGTH=64
 API_DEFAULT_MODE=test
-
-# Rate Limiting (future feature)
-API_RATE_LIMIT_ENABLED=true
-API_RATE_LIMIT_STORAGE=database
 ```
 
 ### Service Provider Configuration
@@ -563,7 +557,7 @@ The package creates two tables:
 - `id` - Primary key
 - `user_id` - Foreign key to users table
 - `key` - Unique API key (auto-generated)
-- `secret_hash` - Bcrypt hash of secret
+- `secret` - Bcrypt hash of secret (nullable)
 - `description` - Optional description
 - `is_active` - Boolean status
 - `expires_at` - Optional expiration date
@@ -594,7 +588,7 @@ class ApiKeyTest extends TestCase
         $apiKey = ApiKey::create([
             'user_id' => $user->id,
             'key' => 'test_key',
-            'secret_hash' => bcrypt('test_secret'),
+            'secret' => 'test_secret', // Will be auto-hashed by model
             'description' => 'Test Key',
             'is_active' => true,
             'mode' => 'test'
@@ -966,10 +960,10 @@ class CustomApiKeyMiddleware extends VerifyApiKey
         // Get API key model
         $apiKey = $request->attributes->get('api_key_model');
         
-        // Add custom checks (e.g., rate limiting, specific permissions)
+        // Add custom checks (e.g., usage limits, specific permissions)
         if ($apiKey->usage_count > 1000) {
             return response()->json([
-                'error' => 'Rate limit exceeded',
+                'error' => 'Usage limit exceeded',
                 'message' => 'API key has exceeded usage limits'
             ], 429);
         }
