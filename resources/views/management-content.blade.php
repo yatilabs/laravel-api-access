@@ -60,7 +60,7 @@ button.btn-close {
                                             <td>
                                                 <strong>{{ $apiKey->description ?: 'Unnamed Key' }}</strong>
                                                 <span
-                                                    class="badge mode-badge {{ $apiKey->mode === 'live' ? 'bg-danger' : 'bg-warning text-dark' }}">
+                                                    class="badge mode-badge {{ $apiKey->mode === 'live' ? 'bg-success' : 'bg-warning text-dark' }}">
                                                     {{ ucfirst($apiKey->mode) }}
                                                 </span>
                                                 <br>

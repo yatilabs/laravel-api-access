@@ -164,8 +164,8 @@
 
     // Show create domain modal
     function showCreateDomainModal() {
-        document.getElementById('domainModalTitle').textContent = 'Add Domain Restriction';
-        document.getElementById('domainSubmitBtn').innerHTML = '<i class="fas fa-save me-2"></i> Add Restriction';
+        document.getElementById('domainModalTitle').textContent = 'Add Domain';
+        document.getElementById('domainSubmitBtn').innerHTML = '<i class="fas fa-save me-2"></i> Add Domain';
         document.getElementById('domainForm').reset();
         document.getElementById('domainId').value = '';
         domainModal.show();
@@ -177,8 +177,8 @@
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
-                    document.getElementById('domainModalTitle').textContent = 'Edit Domain Restriction';
-                    document.getElementById('domainSubmitBtn').innerHTML = '<i class="fas fa-save me-2"></i> Update Restriction';
+                    document.getElementById('domainModalTitle').textContent = 'Edit Domain';
+                    document.getElementById('domainSubmitBtn').innerHTML = '<i class="fas fa-save me-2"></i> Update Domain';
                     document.getElementById('domainId').value = data.domain.id;
                     document.getElementById('api_key_id').value = data.domain.api_key_id;
                     document.getElementById('domain_pattern').value = data.domain.domain_pattern;
@@ -288,7 +288,7 @@
 
     // Delete domain
     function deleteDomain(id) {
-        if (confirm('Are you sure you want to delete this domain restriction?')) {
+        if (confirm('Are you sure you want to delete this domain?')) {
             fetch(`{{ config('api-access.routes.prefix', 'api-access') }}/domains/${id}`, {
                 method: 'DELETE',
                 headers: {
