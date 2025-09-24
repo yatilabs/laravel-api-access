@@ -514,7 +514,7 @@ button.btn-close {
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title">
-                    <i class="fas fa-info-circle me-2"></i>Log Details
+                    <i class="fas fa-info-circle me-2"></i> Log Details
                 </h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal">X</button>
             </div>
