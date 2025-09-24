@@ -11,6 +11,8 @@ A comprehensive Laravel package for managing API keys with domain restrictions, 
 - **Beautiful UI**: Modern responsive interface with copy buttons and modals
 - **Built-in Controllers & Routes**: No need to create controllers in your app
 - **Usage Tracking**: Track API key usage and last used timestamps
+- **API Request Logging**: Log all API requests with filtering and export options
+- **Middleware for Protection**: Easy-to-use middleware to protect your API routes
 - **Copy-to-Clipboard**: Easy copying of API keys and secrets
 
 ## 🚀 Quick Installation
