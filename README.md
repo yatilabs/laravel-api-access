@@ -50,51 +50,12 @@ By default, the management interface is available at: **`/api-access`**
 
 ### Configuration
 
-You can customize the route prefix in your `.env` file:
-
-```env
-API_ACCESS_ROUTE_PREFIX=api-management
-API_ACCESS_DEFAULT_MODE=test
-```
-
-Or publish and edit the config file:
+Publish and edit the config file:
 
 ```php
 ## Configuration
 
-After installation, you can customize the package behavior by editing the published configuration file:
-
-```php
-// config/api-access.php
-
-return [
-    /**
-     * Custom Layout Integration
-     * Set to your application's layout file to integrate the management interface
-     * with your existing design. Leave null for standalone interface.
-     * Example: 'layouts.app'
-     */
-    'layout' => null,
-
-    /**
-     * Route Configuration
-     */
-    'routes' => [
-        'prefix' => 'api-access',
-        'middleware' => ['web'],
-        'name_prefix' => 'api-access.',
-    ],
-
-    /**
-     * Database Configuration
-     */
-    'database' => [
-        'connection' => null, // Use default connection
-        'api_keys_table' => 'api_keys',
-        'api_key_domains_table' => 'api_key_domains',
-    ],
-];
-```
+After installation, you can customize the package behavior by editing the published configuration file.
 
 ### Layout Integration
 
@@ -216,23 +177,6 @@ curl "http://your-app.com/api/protected?api_key=your-api-key&api_secret=your-sec
 }
 ```
 
-## 🎨 UI Features
-
-### Modern Interface
-- **Clean Tables**: Properly formatted tables with responsive design
-- **Modal Dialogs**: Create and edit forms in elegant modals
-- **Copy Buttons**: One-click copying for API keys and secrets
-- **Toast Notifications**: Instant feedback for all actions
-- **Status Badges**: Visual indicators for API key status and mode
-
-### Copy-to-Clipboard
-The interface includes copy buttons next to all API keys, secrets, and domain patterns for easy copying.
-
-### Secret Management
-- Secrets are only shown once after creation/regeneration
-- Secure modal display with copy functionality
-- Visual warnings about secret security
-
 ## 🔧 Advanced Usage
 
 ### Custom Middleware
@@ -305,36 +249,6 @@ class YourController extends Controller
 }
 ```
 
-## 📊 Database Structure
-
-### `api_keys` Table
-- `id` - Primary key
-- `user_id` - Foreign key to users table
-- `key` - Unique API key (auto-generated)
-- `secret` - Bcrypt hash of secret (nullable)
-- `description` - Optional description
-- `is_active` - Boolean status
-- `expires_at` - Optional expiration date
-- `mode` - 'test' or 'live'
-- `usage_count` - Request counter
-- `last_used_at` - Last usage timestamp
-- `created_at` / `updated_at` - Timestamps
-
-### `api_key_domains` Table
-- `id` - Primary key
-- `api_key_id` - Foreign key to api_keys table
-- `domain_pattern` - Domain pattern (supports wildcards)
-- `created_at` / `updated_at` - Timestamps
-
-## 🔍 Domain Patterns
-
-The package supports flexible domain patterns:
-
-- `example.com` - Exact match
-- `*.example.com` - Subdomain wildcard
-- `*` - Match any domain
-- Test mode automatically allows domains configured in `localhost_domains` config
-
 ### Test Mode Domain Configuration
 
 In test mode, API keys automatically allow domains specified in the `localhost_domains` configuration array. This makes development easier by allowing local development domains without manually adding domain restrictions.
@@ -365,77 +279,6 @@ You can customize these in your config file:
 ```
 
 **Note:** Wildcard patterns are supported in the localhost_domains configuration.
-
-## 🧪 Testing
-
-```php
-use Yatilabs\ApiAccess\Models\ApiKey;
-
-public function test_api_key_creation()
-{
-    $user = User::factory()->create();
-    
-    $apiKey = ApiKey::create([
-        'user_id' => $user->id,
-        'key' => 'test_key',
-        'secret' => 'test_secret', // Will be auto-hashed by model
-        'description' => 'Test Key',
-        'is_active' => true,
-        'mode' => 'test'
-    ]);
-
-    $this->assertTrue($apiKey->verifySecret('test_secret'));
-}
-```
-
-## 📝 Configuration Options
-
-```php
-return [
-    // Basic Settings
-    'default_mode' => 'test',              // Default mode for new API keys
-    'key_prefix' => 'ak_',                 // Prefix for generated API keys
-    'key_length' => 32,                    // Length of the API key
-    'secret_length' => 64,                 // Length of the API secret
-
-    // Layout Integration
-    'layout' => null,                      // Custom layout file (e.g., 'layouts.app')
-
-    // Routes Configuration  
-    'routes' => [
-        'prefix' => 'api-access',          // URL prefix for management interface
-        'middleware' => ['web', 'auth'],   // Middleware for management routes
-        'name_prefix' => 'api-access.',    // Route name prefix
-    ],
-
-    // Test Mode Allowed Domains
-    // These domains are automatically allowed when API keys are in test mode
-    'localhost_domains' => [
-        'localhost',                        // Standard localhost
-        '127.0.0.1',                       // IPv4 loopback
-        '::1',                             // IPv6 loopback
-        '0.0.0.0',                         // Any IPv4 address
-        '*.test',                          // All .test domains (wildcards supported)
-        '*.local',                         // All .local domains
-        '*.dev',                           // All .dev domains
-    ],
-
-    // Logging Configuration
-    'logging' => [
-        'enabled' => true,                 // Enable request logging
-        'log_requests' => true,            // Log incoming requests
-        'log_responses' => true,           // Log responses
-        'log_errors' => true,              // Log errors
-    ],
-];
-```
-
-### Key Configuration Notes
-
-- **localhost_domains**: Domains automatically allowed for API keys in test mode. Add your custom development domains here.
-- **layout**: Set to integrate with your existing app layout (e.g., 'layouts.app'). Leave null for standalone interface.
-- **routes.prefix**: Change if you need a different URL prefix than 'api-access'.
-- **routes.middleware**: Customize the middleware stack for the management interface.
 
 ## 🤝 Contributing
 
