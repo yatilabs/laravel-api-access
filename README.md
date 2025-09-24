@@ -60,15 +60,100 @@ API_ACCESS_DEFAULT_MODE=test
 Or publish and edit the config file:
 
 ```php
+## Configuration
+
+After installation, you can customize the package behavior by editing the published configuration file:
+
+```php
 // config/api-access.php
+
 return [
+    /**
+     * Custom Layout Integration
+     * Set to your application's layout file to integrate the management interface
+     * with your existing design. Leave null for standalone interface.
+     * Example: 'layouts.app'
+     */
+    'layout' => null,
+
+    /**
+     * Route Configuration
+     */
     'routes' => [
-        'prefix' => env('API_ACCESS_ROUTE_PREFIX', 'api-access'),
-        'middleware' => ['web', 'auth'],
+        'prefix' => 'api-access',
+        'middleware' => ['web'],
         'name_prefix' => 'api-access.',
     ],
-    // ... other config options
+
+    /**
+     * Database Configuration
+     */
+    'database' => [
+        'connection' => null, // Use default connection
+        'api_keys_table' => 'api_keys',
+        'api_key_domains_table' => 'api_key_domains',
+    ],
 ];
+```
+
+### Layout Integration
+
+To integrate the API Access management interface with your existing Laravel application layout:
+
+1. **Set your layout file** in the configuration:
+   ```php
+   'layout' => 'layouts.app', // Your app's main layout
+   ```
+
+2. **Ensure your layout has the required sections**:
+   ```blade
+   <!-- layouts/app.blade.php -->
+   <!DOCTYPE html>
+   <html>
+   <head>
+       <!-- Your head content -->
+       <meta name="csrf-token" content="{{ csrf_token() }}">
+       <!-- Bootstrap CSS (required) -->
+       <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+       <!-- Font Awesome (required) -->
+       <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+   </head>
+   <body>
+       <!-- Your navigation/header -->
+       
+       <main>
+           @yield('content')
+       </main>
+       
+       <!-- Your footer -->
+       
+       <!-- Bootstrap JS (required) -->
+       <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+       <!-- jQuery (required) -->
+       <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+       
+       @stack('scripts')
+   </body>
+   </html>
+   ```
+
+3. **Required Dependencies**: The management interface requires:
+   - Bootstrap 5.3+
+   - Font Awesome 6.0+
+   - jQuery 3.7+
+   - CSRF token meta tag
+
+If you leave `layout` as `null`, the package will use its own standalone layout with all dependencies included.
+
+### Force Publishing Configuration
+
+To update your configuration file after package updates, use the dedicated command:
+
+```bash
+php artisan api-access:publish-config --force
+```
+
+This command provides helpful information about configuration options and safely overwrites your existing config file.
 ```
 
 ### Available Routes

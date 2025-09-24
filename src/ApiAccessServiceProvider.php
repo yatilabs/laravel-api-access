@@ -32,6 +32,17 @@ class ApiAccessServiceProvider extends ServiceProvider
      */
     public function boot()
     {
+        // Load views
+        $this->loadViewsFrom(__DIR__ . '/../resources/views', 'api-access');
+
+        // Load migrations when running in console
+        if ($this->app->runningInConsole()) {
+            $this->loadMigrationsFrom(__DIR__ . '/../database/migrations');
+        }
+
+        // Load routes
+        $this->loadRoutesFrom(__DIR__ . '/routes.php');
+
         // Publish the config file
         $this->publishes([
             __DIR__ . '/../config/api-access.php' => config_path('api-access.php'),
@@ -52,12 +63,11 @@ class ApiAccessServiceProvider extends ServiceProvider
             __DIR__ . '/../resources/views' => resource_path('views/vendor/api-access'),
         ], 'views');
 
-        // Load views
-        $this->loadViewsFrom(__DIR__ . '/../resources/views', 'api-access');
-
-        // Load migrations when running in console
+        // Register commands
         if ($this->app->runningInConsole()) {
-            $this->loadMigrationsFrom(__DIR__ . '/../database/migrations');
+            $this->commands([
+                \Yatilabs\ApiAccess\Commands\PublishConfigCommand::class,
+            ]);
         }
 
         // Register middleware
@@ -65,8 +75,5 @@ class ApiAccessServiceProvider extends ServiceProvider
 
         // Register the service
         $this->app->singleton(\Yatilabs\ApiAccess\Services\ApiAccessService::class);
-
-        // Load routes
-        $this->loadRoutesFrom(__DIR__ . '/routes.php');
     }
 }
