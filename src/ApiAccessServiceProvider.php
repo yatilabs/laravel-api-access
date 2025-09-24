@@ -46,5 +46,8 @@ class ApiAccessServiceProvider extends ServiceProvider
         if ($this->app->runningInConsole()) {
             $this->loadMigrationsFrom(__DIR__ . '/../database/migrations');
         }
+
+        // Register middleware
+        $this->app['router']->aliasMiddleware('api.key', \Yatilabs\ApiAccess\Middleware\VerifyApiKey::class);
     }
 }
