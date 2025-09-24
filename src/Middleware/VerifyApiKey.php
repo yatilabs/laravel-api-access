@@ -5,7 +5,10 @@ namespace Yatilabs\ApiAccess\Middleware;
 use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
 use Yatilabs\ApiAccess\Models\ApiKey;
+use Yatilabs\ApiAccess\Models\ApiLog;
 
 class VerifyApiKey
 {
@@ -18,48 +21,284 @@ class VerifyApiKey
      */
     public function handle(Request $request, Closure $next)
     {
-        // Extract API key and secret from request
-        $apiKey = $this->extractApiKey($request);
-        $secret = $this->extractSecret($request);
+        $startTime = microtime(true);
+        $requestId = Str::uuid()->toString();
+        $apiKeyModel = null;
+        $isAuthenticated = false;
+        $errorMessage = null;
+        
+        try {
+            // Extract API key and secret from request
+            $apiKey = $this->extractApiKey($request);
+            $secret = $this->extractSecret($request);
 
-        if (!$apiKey) {
-            return $this->unauthorizedResponse('API key is required');
+            if (!$apiKey) {
+                $errorMessage = 'API key is required';
+                return $this->handleUnauthorized($request, $errorMessage, $startTime, $requestId, $apiKeyModel, $isAuthenticated);
+            }
+
+            // Find the API key in database
+            $apiKeyModel = ApiKey::findByKey($apiKey);
+
+            if (!$apiKeyModel) {
+                $errorMessage = 'Invalid API key';
+                return $this->handleUnauthorized($request, $errorMessage, $startTime, $requestId, $apiKeyModel, $isAuthenticated);
+            }
+
+            // Check if API key is active
+            if (!$apiKeyModel->isActive()) {
+                $errorMessage = 'API key is inactive or expired';
+                return $this->handleUnauthorized($request, $errorMessage, $startTime, $requestId, $apiKeyModel, $isAuthenticated);
+            }
+
+            // Check if API key has expired
+            if ($apiKeyModel->hasExpired()) {
+                $errorMessage = 'API key has expired';
+                return $this->handleUnauthorized($request, $errorMessage, $startTime, $requestId, $apiKeyModel, $isAuthenticated);
+            }
+
+            // Verify secret if provided
+            if (!$apiKeyModel->verifySecret($secret)) {
+                $errorMessage = 'Invalid API key secret';
+                return $this->handleUnauthorized($request, $errorMessage, $startTime, $requestId, $apiKeyModel, $isAuthenticated);
+            }
+
+            // Check domain restrictions
+            if (!$this->isDomainAllowed($request, $apiKeyModel)) {
+                $errorMessage = 'Domain not allowed for this API key';
+                return $this->handleUnauthorized($request, $errorMessage, $startTime, $requestId, $apiKeyModel, $isAuthenticated);
+            }
+
+            // Authentication successful
+            $isAuthenticated = true;
+            
+            // Increment usage count
+            $apiKeyModel->incrementUsage();
+
+            // Add API key model to request for use in controllers
+            $request->attributes->set('api_key_model', $apiKeyModel);
+            $request->attributes->set('request_id', $requestId);
+
+            $response = $next($request);
+            
+            // Log successful request
+            $this->logRequest($request, $response, $startTime, $requestId, $apiKeyModel, $isAuthenticated);
+            
+            return $response;
+            
+        } catch (\Exception $e) {
+            $errorMessage = 'Internal server error: ' . $e->getMessage();
+            
+            $response = response()->json([
+                'error' => 'Internal Server Error',
+                'message' => 'An unexpected error occurred',
+                'request_id' => $requestId,
+            ], 500);
+            
+            // Log error
+            $this->logRequest($request, $response, $startTime, $requestId, $apiKeyModel, $isAuthenticated, $errorMessage, $e->getTraceAsString());
+            
+            return $response;
+        }
+    }
+
+    /**
+     * Handle unauthorized response and log it.
+     */
+    protected function handleUnauthorized(Request $request, string $message, float $startTime, string $requestId, ?ApiKey $apiKeyModel, bool $isAuthenticated): JsonResponse
+    {
+        $response = $this->unauthorizedResponse($message, $requestId);
+        
+        // Log unauthorized request
+        $this->logRequest($request, $response, $startTime, $requestId, $apiKeyModel, $isAuthenticated, $message);
+        
+        return $response;
+    }
+
+    /**
+     * Log API request and response.
+     */
+    protected function logRequest(Request $request, $response, float $startTime, string $requestId, ?ApiKey $apiKeyModel, bool $isAuthenticated, ?string $errorMessage = null, ?string $errorTrace = null): void
+    {
+        // Check if logging is enabled
+        if (!config('api-access.logging.enabled', true)) {
+            return;
         }
 
-        // Find the API key in database
-        $apiKeyModel = ApiKey::findByKey($apiKey);
+        $executionTime = round((microtime(true) - $startTime) * 1000);
+        $logConfig = config('api-access.logging', []);
 
-        if (!$apiKeyModel) {
-            return $this->unauthorizedResponse('Invalid API key');
+        // Prepare log data
+        $logData = [
+            'api_key_id' => $apiKeyModel ? $apiKeyModel->id : null,
+            'ip_address' => $this->getClientIpAddress($request),
+            'user_agent' => $logConfig['log_user_agent'] ?? true ? $request->userAgent() : null,
+            'method' => $request->method(),
+            'url' => $request->fullUrl(),
+            'route' => $request->route() ? $request->route()->getName() : null,
+            'response_status' => $response->getStatusCode(),
+            'execution_time_ms' => $logConfig['log_execution_time'] ?? true ? $executionTime : null,
+            'error_message' => $errorMessage,
+            'error_trace' => $errorTrace,
+            'api_key_hash' => $apiKeyModel ? hash('sha256', $apiKeyModel->key) : null,
+            'is_authenticated' => $isAuthenticated,
+            'request_id' => $requestId,
+        ];
+
+        // Add request headers
+        if ($logConfig['log_headers'] ?? true) {
+            $logData['request_headers'] = $this->sanitizeHeaders($request->headers->all());
         }
 
-        // Check if API key is active
-        if (!$apiKeyModel->isActive()) {
-            return $this->unauthorizedResponse('API key is inactive or expired');
+        // Add query parameters  
+        if ($logConfig['log_query_parameters'] ?? true) {
+            $logData['query_parameters'] = $request->query->all();
         }
 
-        // Check if API key has expired
-        if ($apiKeyModel->hasExpired()) {
-            return $this->unauthorizedResponse('API key has expired');
+        // Add request body
+        if ($logConfig['log_request_body'] ?? true) {
+            $requestBody = $this->getRequestBody($request);
+            if ($requestBody) {
+                $logData['request_body'] = $this->truncateContent($this->sanitizeRequestBody($requestBody), $logConfig['max_body_size'] ?? 10240);
+            }
         }
 
-        // Verify secret if provided
-        if (!$apiKeyModel->verifySecret($secret)) {
-            return $this->unauthorizedResponse('Invalid API key secret');
+        // Add response data
+        if ($logConfig['log_responses'] ?? true) {
+            if ($logConfig['log_headers'] ?? true) {
+                $logData['response_headers'] = $this->sanitizeHeaders($response->headers->all());
+            }
+            
+            if ($logConfig['log_response_body'] ?? true) {
+                $responseContent = $response->getContent();
+                if ($responseContent) {
+                    $logData['response_body'] = $this->truncateContent($responseContent, $logConfig['max_body_size'] ?? 10240);
+                }
+            }
         }
 
-        // Check domain restrictions
-        if (!$this->isDomainAllowed($request, $apiKeyModel)) {
-            return $this->unauthorizedResponse('Domain not allowed for this API key');
+        // Create log entry
+        try {
+            ApiLog::create($logData);
+        } catch (\Exception $e) {
+            // Silently fail logging to prevent breaking the application
+            Log::error('Failed to create API log entry: ' . $e->getMessage(), [
+                'request_id' => $requestId,
+                'url' => $request->fullUrl(),
+            ]);
+        }
+    }
+
+    /**
+     * Get client IP address with proxy support.
+     */
+    protected function getClientIpAddress(Request $request): string
+    {
+        // Check for IP from shared internet
+        if (!empty($request->server('HTTP_CLIENT_IP'))) {
+            return $request->server('HTTP_CLIENT_IP');
+        }
+        // Check for IP passed from proxy
+        elseif (!empty($request->server('HTTP_X_FORWARDED_FOR'))) {
+            // Can contain multiple IPs, get the first one
+            $ips = explode(',', $request->server('HTTP_X_FORWARDED_FOR'));
+            return trim($ips[0]);
+        }
+        // Check for IP from remote address
+        elseif (!empty($request->server('REMOTE_ADDR'))) {
+            return $request->server('REMOTE_ADDR');
         }
 
-        // Increment usage count
-        $apiKeyModel->incrementUsage();
+        return $request->ip() ?: 'unknown';
+    }
 
-        // Add API key model to request for use in controllers
-        $request->attributes->set('api_key_model', $apiKeyModel);
+    /**
+     * Get request body content.
+     */
+    protected function getRequestBody(Request $request): ?string
+    {
+        $content = $request->getContent();
+        
+        if (empty($content)) {
+            // Try to get from input if JSON/form data
+            $input = $request->all();
+            if (!empty($input)) {
+                return json_encode($input, JSON_UNESCAPED_UNICODE);
+            }
+        }
 
-        return $next($request);
+        return $content;
+    }
+
+    /**
+     * Sanitize headers to remove sensitive information.
+     */
+    protected function sanitizeHeaders(array $headers): array
+    {
+        $sensitiveHeaders = config('api-access.logging.sensitive_headers', [
+            'authorization',
+            'x-api-key',
+            'x-api-secret',
+            'cookie',
+            'set-cookie',
+        ]);
+
+        $sanitized = [];
+        foreach ($headers as $key => $value) {
+            if (in_array(strtolower($key), $sensitiveHeaders)) {
+                $sanitized[$key] = '[REDACTED]';
+            } else {
+                $sanitized[$key] = $value;
+            }
+        }
+
+        return $sanitized;
+    }
+
+    /**
+     * Sanitize request body to mask sensitive fields.
+     */
+    protected function sanitizeRequestBody(string $body): string
+    {
+        $sensitiveFields = config('api-access.logging.sensitive_fields', [
+            'password',
+            'secret',
+            'token',
+            'api_key',
+            'api_secret',
+        ]);
+
+        // Try to decode JSON
+        $data = json_decode($body, true);
+        if (json_last_error() === JSON_ERROR_NONE && is_array($data)) {
+            // Sanitize JSON data
+            foreach ($sensitiveFields as $field) {
+                if (isset($data[$field])) {
+                    $data[$field] = '[REDACTED]';
+                }
+            }
+            return json_encode($data, JSON_UNESCAPED_UNICODE);
+        }
+
+        // For non-JSON content, try basic string replacement
+        foreach ($sensitiveFields as $field) {
+            $pattern = '/("?' . preg_quote($field, '/') . '"?\s*[:=]\s*)[^&\s\n\r"]*/i';
+            $body = preg_replace($pattern, '$1[REDACTED]', $body);
+        }
+
+        return $body;
+    }
+
+    /**
+     * Truncate content to specified maximum size.
+     */
+    protected function truncateContent(string $content, int $maxSize): string
+    {
+        if (strlen($content) <= $maxSize) {
+            return $content;
+        }
+
+        return substr($content, 0, $maxSize) . '... [TRUNCATED]';
     }
 
     /**
@@ -203,11 +442,17 @@ class VerifyApiKey
      * @param  string  $message
      * @return \Illuminate\Http\JsonResponse
      */
-    protected function unauthorizedResponse(string $message): JsonResponse
+    protected function unauthorizedResponse(string $message, string $requestId = null): JsonResponse
     {
-        return response()->json([
+        $response = [
             'error' => 'Unauthorized',
             'message' => $message,
-        ], 401);
+        ];
+
+        if ($requestId) {
+            $response['request_id'] = $requestId;
+        }
+
+        return response()->json($response, 401);
     }
 }

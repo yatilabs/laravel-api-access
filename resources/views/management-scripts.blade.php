@@ -3,15 +3,6 @@
 <!-- jQuery for AJAX requests -->
 <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
 
-<!-- API Access Management Styles (only needed when using     // Delete domain
-    window.deleteDomain = function(domainId) {
-        if (confirm('Are you sure you want to delete this domain?')) {
-            fetch(`{{ config('api-access.routes.prefix', 'api-access') }}/domains/${domainId}/delete`, {
-                method: 'POST',
-                headers: {
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-                }
-            })yout) -->
 @if(config('api-access.layout'))
 <style>
     .api-key-value, .secret-value {

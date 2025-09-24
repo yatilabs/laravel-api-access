@@ -67,6 +67,7 @@ class ApiAccessServiceProvider extends ServiceProvider
         if ($this->app->runningInConsole()) {
             $this->commands([
                 \Yatilabs\ApiAccess\Commands\PublishConfigCommand::class,
+                \Yatilabs\ApiAccess\Console\Commands\CleanupApiLogsCommand::class,
             ]);
         }
 
@@ -75,5 +76,17 @@ class ApiAccessServiceProvider extends ServiceProvider
 
         // Register the service
         $this->app->singleton(\Yatilabs\ApiAccess\Services\ApiAccessService::class);
+
+        // Register scheduled task for log cleanup
+        if (config('api-access.logging.cleanup_enabled', true) && config('api-access.logging.enabled', true)) {
+            $this->app->booted(function () {
+                $schedule = $this->app->make(\Illuminate\Console\Scheduling\Schedule::class);
+                $schedule->command('api-access:cleanup-logs --force')
+                    ->daily()
+                    ->at('02:00')
+                    ->withoutOverlapping()
+                    ->runInBackground();
+            });
+        }
     }
 }
