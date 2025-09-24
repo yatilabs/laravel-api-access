@@ -1,0 +1,21 @@
+<?xml version="1.0"?>
+<ruleset name="Laravel Package">
+    <description>Laravel Package Coding Standard</description>
+
+    <!-- Files and directories to check -->
+    <file>src/</file>
+    <file>tests/</file>
+
+    <!-- Include the PSR-12 coding standard -->
+    <rule ref="PSR12"/>
+
+    <!-- Additional Laravel specific rules -->
+    <rule ref="Generic.Arrays.DisallowLongArraySyntax"/>
+    <rule ref="Generic.CodeAnalysis.UnusedFunctionParameter"/>
+    <rule ref="Generic.Commenting.Todo"/>
+    
+    <!-- Ignore specific files -->
+    <exclude-pattern>vendor/</exclude-pattern>
+    <exclude-pattern>storage/</exclude-pattern>
+    <exclude-pattern>resources/</exclude-pattern>
+</ruleset>
