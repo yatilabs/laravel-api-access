@@ -509,7 +509,7 @@ button.btn-close {
         <div class="modal-content">
             <div class="modal-header bg-warning text-dark">
                 <h5 class="modal-title">
-                    <i class="fas fa-exclamation-triangle me-2"></i>Important: Save Your Secret
+                    <i class="fas fa-exclamation-triangle me-2"></i> Important: Save Your Secret
                 </h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal">X</button>
             </div>
