@@ -22,7 +22,7 @@ Route::group([
     Route::post('/api-keys', [ApiKeyController::class, 'store'])->name('api-keys.store');
     Route::get('/api-keys/{id}/edit', [ApiKeyController::class, 'edit'])->name('api-keys.edit');
     Route::post('/api-keys/{id}/update', [ApiKeyController::class, 'update'])->name('api-keys.update');
-    Route::post('/api-keys/{id}/delete', [ApiKeyController::class, 'destroy'])->name('api-keys.destroy');
+    Route::delete('/api-keys/{id}', [ApiKeyController::class, 'destroy'])->name('api-keys.destroy');
     Route::post('/api-keys/{id}/regenerate-secret', [ApiKeyController::class, 'regenerateSecret'])->name('api-keys.regenerate-secret');
     Route::post('/api-keys/{id}/toggle-status', [ApiKeyController::class, 'toggleStatus'])->name('api-keys.toggle-status');
     
@@ -31,7 +31,7 @@ Route::group([
     Route::post('/domains', [DomainController::class, 'store'])->name('domains.store');
     Route::get('/domains/{id}/edit', [DomainController::class, 'edit'])->name('domains.edit');
     Route::post('/domains/{id}/update', [DomainController::class, 'update'])->name('domains.update');
-    Route::post('/domains/{id}/delete', [DomainController::class, 'destroy'])->name('domains.destroy');
+    Route::delete('/domains/{id}', [DomainController::class, 'destroy'])->name('domains.destroy');
     
     // API Logs
     Route::get('/logs', [ApiKeyController::class, 'logs'])->name('logs.index');

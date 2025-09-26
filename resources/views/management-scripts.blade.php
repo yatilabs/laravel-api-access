@@ -209,10 +209,18 @@
                 showToast('Success', data.message, 'success');
                 
                 if (data.plain_secret) {
+                    // Show secret modal first
                     showSecret(data.plain_secret);
+                    
+                    // Reload page after secret modal is closed
+                    const secretModalElement = document.getElementById('secretModal');
+                    secretModalElement.addEventListener('hidden.bs.modal', function() {
+                        location.reload();
+                    }, { once: true }); // Use once: true to ensure it only fires once
+                } else {
+                    // If no secret, just reload immediately (for updates)
+                    location.reload();
                 }
-                
-                location.reload(); // Refresh to show updated data
             } else {
                 if (data.errors) {
                     let errorMsg = Object.values(data.errors).flat().join('<br>');
