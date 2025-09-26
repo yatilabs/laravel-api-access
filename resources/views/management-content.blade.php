@@ -56,6 +56,9 @@ button.btn-close {
                                         <th>Status</th>
                                         <th>Usage</th>
                                         <th>Expires</th>
+                                        @if(\Yatilabs\ApiAccess\Models\ApiKey::isOwnerEnabled())
+                                            <th>{{ config('api-access.model_owner.label', 'Owner') }}</th>
+                                        @endif
                                         <th>Actions</th>
                                     </tr>
                                 </thead>
@@ -123,6 +126,18 @@ button.btn-close {
                                                     <span class="text-muted">Never</span>
                                                 @endif
                                             </td>
+                                            @if(\Yatilabs\ApiAccess\Models\ApiKey::isOwnerEnabled())
+                                                <td>
+                                                    @if($apiKey->owner)
+                                                        <div>
+                                                            <strong>{{ $apiKey->owner_display_name }}</strong>
+                                                        </div>
+                                                        <small class="text-muted">{{ $apiKey->owner_label }}</small>
+                                                    @else
+                                                        <span class="text-muted">No owner</span>
+                                                    @endif
+                                                </td>
+                                            @endif
                                             <td>
                                                 <div class="btn-group" role="group">
                                                     <button type="button" class="btn btn-sm btn-outline-primary"
@@ -392,6 +407,19 @@ button.btn-close {
                                     <option value="test">Test Mode</option>
                                     <option value="live">Live Mode</option>
                                 </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Owner Selection (Dynamic based on config) -->
+                    <div id="ownerSection" class="row" style="display: none;">
+                        <div class="col-12">
+                            <div class="mb-3">
+                                <label for="owner_id" class="form-label" id="ownerLabel">Owner</label>
+                                <select class="form-select form-control" id="owner_id" name="owner_id">
+                                    <option value="">Select Owner</option>
+                                </select>
+                                <div class="form-text" id="ownerHelpText">Select the owner for this API key.</div>
                             </div>
                         </div>
                     </div>

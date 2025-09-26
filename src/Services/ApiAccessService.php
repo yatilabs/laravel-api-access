@@ -18,8 +18,14 @@ class ApiAccessService
     {
         $perPage = $request->get('per_page', 15);
         
-        return ApiKey::with(['domains'])
-            ->where('user_id', auth()->id())
+        $query = ApiKey::with(['domains']);
+        
+        // Load owner relationship if enabled
+        if (ApiKey::isOwnerEnabled()) {
+            $query->with('owner');
+        }
+        
+        return $query->where('user_id', auth()->id())
             ->orderBy('created_at', 'desc')
             ->paginate($perPage);
     }
@@ -29,8 +35,14 @@ class ApiAccessService
      */
     public function getApiKey($id)
     {
-        return ApiKey::with(['domains'])
-            ->where('user_id', auth()->id())
+        $query = ApiKey::with(['domains']);
+        
+        // Load owner relationship if enabled
+        if (ApiKey::isOwnerEnabled()) {
+            $query->with('owner');
+        }
+        
+        return $query->where('user_id', auth()->id())
             ->findOrFail($id);
     }
 
@@ -52,7 +64,7 @@ class ApiAccessService
             $key = $this->generateApiKey();
             $secret = $this->generateApiSecret();
             
-            $apiKey = ApiKey::create([
+            $apiKeyData = [
                 'user_id' => auth()->id(),
                 'key' => $key,
                 'secret' => $secret,
@@ -60,7 +72,16 @@ class ApiAccessService
                 'is_active' => isset($data['is_active']) && $data['is_active'] == '1',
                 'expires_at' => !empty($data['expires_at']) ? $data['expires_at'] : null,
                 'mode' => $data['mode'] ?? 'test',
-            ]);
+            ];
+
+            // Handle owner assignment if enabled and provided
+            if (ApiKey::isOwnerEnabled() && !empty($data['owner_id'])) {
+                $config = config('api-access.model_owner');
+                $apiKeyData['owner_type'] = $config['model'];
+                $apiKeyData['owner_id'] = $data['owner_id'];
+            }
+            
+            $apiKey = ApiKey::create($apiKeyData);
 
             DB::commit();
 
@@ -88,12 +109,29 @@ class ApiAccessService
             throw new ValidationException($validator);
         }
 
-        $apiKey->update([
+        $updateData = [
             'description' => $data['description'] ?? null,
             'is_active' => isset($data['is_active']) && $data['is_active'] == '1',
             'expires_at' => !empty($data['expires_at']) ? $data['expires_at'] : null,
             'mode' => $data['mode'] ?? 'test',
-        ]);
+        ];
+
+        // Handle owner update if enabled
+        if (ApiKey::isOwnerEnabled()) {
+            if (isset($data['owner_id'])) {
+                if (!empty($data['owner_id'])) {
+                    $config = config('api-access.model_owner');
+                    $updateData['owner_type'] = $config['model'];
+                    $updateData['owner_id'] = $data['owner_id'];
+                } else {
+                    // Clear owner if empty value provided
+                    $updateData['owner_type'] = null;
+                    $updateData['owner_id'] = null;
+                }
+            }
+        }
+
+        $apiKey->update($updateData);
 
         return $apiKey->fresh();
     }
@@ -234,6 +272,18 @@ class ApiAccessService
             'mode.in' => 'Mode must be either test or live',
             'expires_at.after' => 'Expiration date must be in the future'
         ];
+
+        // Add owner validation if enabled
+        if (ApiKey::isOwnerEnabled()) {
+            if (ApiKey::isOwnerRequired()) {
+                $rules['owner_id'] = 'required|integer';
+                $messages['owner_id.required'] = 'Please select an owner';
+                $messages['owner_id.integer'] = 'Invalid owner selection';
+            } else {
+                $rules['owner_id'] = 'nullable|integer';
+                $messages['owner_id.integer'] = 'Invalid owner selection';
+            }
+        }
 
         return Validator::make($data, $rules, $messages);
     }

@@ -89,7 +89,44 @@
         document.getElementById('apiKeyForm').reset();
         document.getElementById('apiKeyId').value = '';
         document.getElementById('is_active').checked = true;
-        apiKeyModal.show();
+        
+        // Load modal data including owner options
+        fetch(`{{ config('api-access.routes.prefix', 'api-access') }}/api-keys/create`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Handle owner section
+                    const ownerSection = document.getElementById('ownerSection');
+                    const ownerSelect = document.getElementById('owner_id');
+                    const ownerLabel = document.getElementById('ownerLabel');
+                    
+                    if (data.owner_enabled) {
+                        ownerSection.style.display = 'block';
+                        ownerLabel.textContent = data.owner_label || 'Owner';
+                        
+                        // Populate owner options
+                        ownerSelect.innerHTML = '<option value="">Select ' + (data.owner_label || 'Owner') + '</option>';
+                        data.available_owners.forEach(owner => {
+                            ownerSelect.innerHTML += `<option value="${owner.id}">${owner.text}</option>`;
+                        });
+                        
+                        // Set required attribute if needed
+                        if (data.owner_required) {
+                            ownerSelect.setAttribute('required', 'required');
+                        } else {
+                            ownerSelect.removeAttribute('required');
+                        }
+                    } else {
+                        ownerSection.style.display = 'none';
+                        ownerSelect.removeAttribute('required');
+                    }
+                    
+                    apiKeyModal.show();
+                }
+            })
+            .catch(error => {
+                showToast('Error', 'Failed to load modal data', 'error');
+            });
     }
 
     // Show edit API key modal
@@ -106,10 +143,45 @@
                     document.getElementById('is_active').checked = data.api_key.is_active;
                     document.getElementById('expires_at').value = data.api_key.expires_at ? 
                         new Date(data.api_key.expires_at).toISOString().slice(0, 16) : '';
+                    
+                    // Handle owner section
+                    const ownerSection = document.getElementById('ownerSection');
+                    const ownerSelect = document.getElementById('owner_id');
+                    const ownerLabel = document.getElementById('ownerLabel');
+                    
+                    if (data.owner_enabled) {
+                        ownerSection.style.display = 'block';
+                        ownerLabel.textContent = data.owner_label || 'Owner';
+                        
+                        // Populate owner options
+                        ownerSelect.innerHTML = '<option value="">Select ' + (data.owner_label || 'Owner') + '</option>';
+                        data.available_owners.forEach(owner => {
+                            ownerSelect.innerHTML += `<option value="${owner.id}">${owner.text}</option>`;
+                        });
+                        
+                        // Set current owner if exists
+                        if (data.api_key.owner_id) {
+                            ownerSelect.value = data.api_key.owner_id;
+                        }
+                        
+                        // Set required attribute if needed
+                        if (data.owner_required) {
+                            ownerSelect.setAttribute('required', 'required');
+                        } else {
+                            ownerSelect.removeAttribute('required');
+                        }
+                    } else {
+                        ownerSection.style.display = 'none';
+                        ownerSelect.removeAttribute('required');
+                    }
+                    
                     apiKeyModal.show();
                 } else {
                     showToast('Error', data.message, 'error');
                 }
+            })
+            .catch(error => {
+                showToast('Error', 'Failed to load API key data', 'error');
             });
     }
 
@@ -457,6 +529,12 @@
                             <strong>${log.api_key.description}</strong>
                             <br>
                             <code class="small">${log.api_key.key_preview}</code>
+                            ${log.api_key.owner_display_name ? `
+                                <br>
+                                <small class="text-muted">
+                                    ${log.api_key.owner_label}: ${log.api_key.owner_display_name}
+                                </small>
+                            ` : ''}
                         </div>
                     ` : `
                         <span class="badge bg-${log.is_authenticated ? 'success' : 'danger'}">
@@ -654,6 +732,9 @@
                                 <div><strong>${log.api_key.description}</strong></div>
                                 <div><code>${log.api_key.key}</code></div>
                                 <div><small class="text-muted">Mode: ${log.api_key.mode.toUpperCase()}</small></div>
+                                ${log.api_key.owner_display_name ? `
+                                    <div><small class="text-muted">${log.api_key.owner_label}: ${log.api_key.owner_display_name}</small></div>
+                                ` : ''}
                             </td></tr>
                         ` : ''}
                         ${log.error_message ? `<tr><th>Error:</th><td class="text-danger small">${log.error_message}</td></tr>` : ''}

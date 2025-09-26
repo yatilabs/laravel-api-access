@@ -35,13 +35,50 @@ class ApiKeyController extends Controller
      */
     public function create()
     {
-        return response()->json([
+        $response = [
             'success' => true,
             'modes' => [
                 'test' => 'Test Mode (allows localhost)',
                 'live' => 'Live Mode (strict domain validation)'
             ]
-        ]);
+        ];
+
+        // Add owner options if enabled
+        if (ApiKey::isOwnerEnabled()) {
+            $response['owner_enabled'] = true;
+            $response['owner_required'] = ApiKey::isOwnerRequired();
+            $response['owner_label'] = config('api-access.model_owner.label', 'Owner');
+            $response['available_owners'] = ApiKey::getAvailableOwners()->map(function ($owner) {
+                $config = config('api-access.model_owner');
+                $idColumn = $config['id_column'] ?? 'id';
+                $titleColumn = $config['title_column'] ?? 'name';
+                $additionalColumns = $config['additional_columns'] ?? [];
+
+                $displayText = $owner->{$titleColumn};
+                
+                // Add additional columns to display text
+                if (!empty($additionalColumns)) {
+                    $additionalData = [];
+                    foreach ($additionalColumns as $column) {
+                        if (isset($owner->{$column})) {
+                            $additionalData[] = $owner->{$column};
+                        }
+                    }
+                    if (!empty($additionalData)) {
+                        $displayText .= ' (' . implode(', ', $additionalData) . ')';
+                    }
+                }
+
+                return [
+                    'id' => $owner->{$idColumn},
+                    'text' => $displayText,
+                ];
+            });
+        } else {
+            $response['owner_enabled'] = false;
+        }
+
+        return response()->json($response);
     }
 
     /**
@@ -80,14 +117,59 @@ class ApiKeyController extends Controller
         try {
             $apiKey = $this->apiAccessService->getApiKey($id);
             
-            return response()->json([
+            $response = [
                 'success' => true,
                 'api_key' => $apiKey,
                 'modes' => [
                     'test' => 'Test Mode (allows localhost)',
                     'live' => 'Live Mode (strict domain validation)'
                 ]
-            ]);
+            ];
+
+            // Add owner information if enabled
+            if (ApiKey::isOwnerEnabled()) {
+                $response['owner_enabled'] = true;
+                $response['owner_required'] = ApiKey::isOwnerRequired();
+                $response['owner_label'] = config('api-access.model_owner.label', 'Owner');
+                $response['available_owners'] = ApiKey::getAvailableOwners()->map(function ($owner) {
+                    $config = config('api-access.model_owner');
+                    $idColumn = $config['id_column'] ?? 'id';
+                    $titleColumn = $config['title_column'] ?? 'name';
+                    $additionalColumns = $config['additional_columns'] ?? [];
+
+                    $displayText = $owner->{$titleColumn};
+                    
+                    // Add additional columns to display text
+                    if (!empty($additionalColumns)) {
+                        $additionalData = [];
+                        foreach ($additionalColumns as $column) {
+                            if (isset($owner->{$column})) {
+                                $additionalData[] = $owner->{$column};
+                            }
+                        }
+                        if (!empty($additionalData)) {
+                            $displayText .= ' (' . implode(', ', $additionalData) . ')';
+                        }
+                    }
+
+                    return [
+                        'id' => $owner->{$idColumn},
+                        'text' => $displayText,
+                    ];
+                });
+                
+                // Add current owner information
+                if ($apiKey->owner) {
+                    $config = config('api-access.model_owner');
+                    $idColumn = $config['id_column'] ?? 'id';
+                    $response['api_key']['owner_id'] = $apiKey->owner->{$idColumn};
+                    $response['api_key']['owner_display_name'] = $apiKey->owner_display_name;
+                }
+            } else {
+                $response['owner_enabled'] = false;
+            }
+
+            return response()->json($response);
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
@@ -201,7 +283,11 @@ class ApiKeyController extends Controller
         }
 
         try {
-            $query = ApiLog::with('apiKey:id,key,description')
+            $query = ApiLog::with(['apiKey' => function($query) {
+                    if (ApiKey::isOwnerEnabled()) {
+                        $query->with('owner');
+                    }
+                }])
                 ->orderBy('created_at', 'desc');
 
             // Apply filters
@@ -260,7 +346,9 @@ class ApiKeyController extends Controller
                     'api_key' => $log->apiKey ? [
                         'id' => $log->apiKey->id,
                         'description' => $log->apiKey->description,
-                        'key_preview' => substr($log->apiKey->key, 0, 8) . '...'
+                        'key_preview' => substr($log->apiKey->key, 0, 8) . '...',
+                        'owner_display_name' => $log->apiKey->owner_display_name ?? null,
+                        'owner_label' => $log->apiKey->owner_label ?? null,
                     ] : null,
                 ];
             });
@@ -291,7 +379,13 @@ class ApiKeyController extends Controller
     public function logDetail($id)
     {
         try {
-            $log = ApiLog::with('apiKey')->findOrFail($id);
+            $query = ApiLog::with(['apiKey' => function($query) {
+                if (ApiKey::isOwnerEnabled()) {
+                    $query->with('owner');
+                }
+            }]);
+            
+            $log = $query->findOrFail($id);
 
             return response()->json([
                 'success' => true,
@@ -321,6 +415,8 @@ class ApiKeyController extends Controller
                         'key' => substr($log->apiKey->key, 0, 8) . '...' . substr($log->apiKey->key, -4),
                         'mode' => $log->apiKey->mode,
                         'is_active' => $log->apiKey->is_active,
+                        'owner_display_name' => $log->apiKey->owner_display_name ?? null,
+                        'owner_label' => $log->apiKey->owner_label ?? null,
                     ] : null,
                 ]
             ]);

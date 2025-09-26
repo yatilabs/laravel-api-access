@@ -5,12 +5,15 @@ namespace Yatilabs\ApiAccess\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\MorphTo;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 use Carbon\Carbon;
 
 class ApiKey extends Model
 {
+    use SoftDeletes;
     /**
      * The table associated with the model.
      */
@@ -29,6 +32,8 @@ class ApiKey extends Model
         'last_used_at',
         'usage_count',
         'mode',
+        'owner_type',
+        'owner_id',
     ];
 
     /**
@@ -87,6 +92,96 @@ class ApiKey extends Model
     public function domains(): HasMany
     {
         return $this->hasMany(ApiKeyDomain::class);
+    }
+
+    /**
+     * Get the owner model (polymorphic relationship).
+     */
+    public function owner(): MorphTo
+    {
+        return $this->morphTo();
+    }
+
+    /**
+     * Get the owner display name based on configuration.
+     */
+    public function getOwnerDisplayNameAttribute(): ?string
+    {
+        $config = config('api-access.model_owner');
+        
+        if (!$config['enabled'] || !$this->owner) {
+            return null;
+        }
+
+        $titleColumn = $config['title_column'] ?? 'name';
+        return $this->owner->{$titleColumn} ?? null;
+    }
+
+    /**
+     * Get the owner label based on configuration.
+     */
+    public function getOwnerLabelAttribute(): ?string
+    {
+        $config = config('api-access.model_owner');
+        
+        if (!$config['enabled'] || !$this->owner) {
+            return null;
+        }
+
+        return $config['label'] ?? 'Owner';
+    }
+
+    /**
+     * Check if model owner functionality is enabled.
+     */
+    public static function isOwnerEnabled(): bool
+    {
+        return config('api-access.model_owner.enabled', false);
+    }
+
+    /**
+     * Check if owner selection is required.
+     */
+    public static function isOwnerRequired(): bool
+    {
+        return config('api-access.model_owner.required', false);
+    }
+
+    /**
+     * Get available owners for selection.
+     */
+    public static function getAvailableOwners()
+    {
+        $config = config('api-access.model_owner');
+        
+        if (!$config['enabled']) {
+            return collect();
+        }
+
+        $modelClass = $config['model'];
+        if (!class_exists($modelClass)) {
+            return collect();
+        }
+
+        $query = $modelClass::query();
+        
+        // Apply constraints if configured
+        if (isset($config['constraints']) && is_array($config['constraints'])) {
+            foreach ($config['constraints'] as $column => $value) {
+                $query->where($column, $value);
+            }
+        }
+
+        $idColumn = $config['id_column'] ?? 'id';
+        $titleColumn = $config['title_column'] ?? 'name';
+        $additionalColumns = $config['additional_columns'] ?? [];
+
+        $selectColumns = [$idColumn, $titleColumn];
+        if (!empty($additionalColumns)) {
+            $selectColumns = array_merge($selectColumns, $additionalColumns);
+        }
+
+        return $query->select($selectColumns)->orderBy($titleColumn)->get();
     }
 
     /**

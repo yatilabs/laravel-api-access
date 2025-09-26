@@ -5,6 +5,7 @@ A comprehensive Laravel package for managing API keys with domain restrictions, 
 ## ✨ Features
 
 - **Complete API Key Management**: Create, update, delete, and manage API keys with full metadata
+- **Model Owner Support**: Link API keys to specific model instances (Users, Organizations, etc.)
 - **Domain Restrictions**: Restrict API keys to specific domains with wildcard pattern support  
 - **Secure Authentication**: Multiple authentication methods with bcrypt secret hashing
 - **Test/Live Modes**: Separate environments with different validation rules
@@ -14,6 +15,7 @@ A comprehensive Laravel package for managing API keys with domain restrictions, 
 - **API Request Logging**: Log all API requests with filtering and export options
 - **Middleware for Protection**: Easy-to-use middleware to protect your API routes
 - **Copy-to-Clipboard**: Easy copying of API keys and secrets
+- **Soft Deletes**: API keys are soft deleted for data integrity
 
 ## 🚀 Quick Installation
 
@@ -281,6 +283,101 @@ You can customize these in your config file:
 ```
 
 **Note:** Wildcard patterns are supported in the localhost_domains configuration.
+
+## 🏢 Model Owner Support
+
+The package supports linking API keys to specific model instances (e.g., Users, Organizations, Projects, etc.). This feature allows you to track which entity owns each API key.
+
+### Configuration
+
+Configure model ownership in your configuration file:
+
+```php
+'model_owner' => [
+    'enabled' => true,                     // Enable model owner functionality
+    'required' => false,                   // Whether owner selection is required
+    'model' => 'App\\Models\\User',        // Model class to link API keys to
+    'id_column' => 'id',                   // Primary key column name
+    'title_column' => 'name',              // Column to display as owner name
+    'label' => 'User',                     // Display label for the model type
+    
+    // Optional: Additional columns to display in dropdowns
+    'additional_columns' => [
+        'email',                           // Show email in dropdown
+    ],
+    
+    // Optional: Query constraints for owner selection
+    'constraints' => [
+        'active' => true,                  // Only show active users
+    ],
+],
+```
+
+### Usage
+
+When model owner support is enabled:
+
+1. **Creating API Keys**: You can optionally (or require) selecting an owner when creating API keys
+2. **Management Interface**: The owner information is displayed in API key lists and details
+3. **Logs**: API key owner information is included in request logs
+4. **Programmatic Access**: You can access owner relationships in your code
+
+### Programmatic Usage
+
+```php
+use Yatilabs\ApiAccess\Models\ApiKey;
+
+// Create API key with owner
+$apiKey = ApiKey::create([
+    'description' => 'Project API Key',
+    'mode' => 'live',
+    'owner_type' => 'App\\Models\\Project',
+    'owner_id' => 123,
+    // ... other fields
+]);
+
+// Access owner relationship
+$owner = $apiKey->owner; // Returns the actual model instance
+$ownerName = $apiKey->owner_display_name; // Returns formatted display name
+$ownerLabel = $apiKey->owner_label; // Returns the configured label
+
+// Check if owner functionality is enabled
+if (ApiKey::isOwnerEnabled()) {
+    // Owner functionality is available
+}
+
+// Get available owners for selection
+$availableOwners = ApiKey::getAvailableOwners();
+```
+
+### Customization Examples
+
+**For Organizations:**
+```php
+'model_owner' => [
+    'enabled' => true,
+    'required' => true,
+    'model' => 'App\\Models\\Organization',
+    'id_column' => 'id',
+    'title_column' => 'name',
+    'label' => 'Organization',
+    'additional_columns' => ['domain'],
+    'constraints' => ['status' => 'active'],
+],
+```
+
+**For Projects:**
+```php
+'model_owner' => [
+    'enabled' => true,
+    'required' => false,
+    'model' => 'App\\Models\\Project',
+    'id_column' => 'uuid',
+    'title_column' => 'title',
+    'label' => 'Project',
+    'additional_columns' => ['status', 'client_name'],
+],
+```
 
 ## 🤝 Contributing
 

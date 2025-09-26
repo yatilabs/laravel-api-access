@@ -22,7 +22,12 @@ return new class extends Migration
             $table->timestamp('last_used_at')->nullable();
             $table->bigInteger('usage_count')->default(0);
             $table->enum('mode', ['live', 'test'])->default('live');
+            
+            // Model owner support - polymorphic relationship
+            $table->nullableMorphs('owner');
+            
             $table->timestamps();
+            $table->softDeletes();
 
             $table->foreign('user_id')->references('id')->on('users')->onDelete('cascade');
             $table->index('expires_at');

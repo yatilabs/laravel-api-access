@@ -64,6 +64,36 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Model Owner Configuration
+    |--------------------------------------------------------------------------
+    | Configure API keys to be linked to specific model instances (e.g., Users).
+    | This allows tracking which model owns each API key.
+    |
+    | Set 'enabled' to false to disable this feature entirely.
+    | When enabled, API keys can be associated with any specified model.
+    |--------------------------------------------------------------------------
+    */
+    'model_owner' => [
+        'enabled' => true,                     // Enable model owner functionality
+        'required' => false,                   // Whether owner selection is required
+        'model' => 'App\\Models\\User',            // Model class to link API keys to
+        'id_column' => 'id',                   // Primary key column name
+        'title_column' => 'name',              // Column to display as owner name
+        'label' => 'User',                     // Display label for the model type
+        
+        // Optional: Additional columns to display in dropdowns
+        'additional_columns' => [
+            // 'email',                        // Show email in dropdown
+        ],
+        
+        // Optional: Query constraints for owner selection
+        'constraints' => [
+            // 'active' => true,               // Only show active users
+        ],
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Logging Configuration
     |--------------------------------------------------------------------------
     | Configure comprehensive logging for API requests and responses.
