@@ -1,5 +1,5 @@
 {
-    "name": "yatilabs/api-access",
+    "name": "yatilabs/laravel-api-access",
     "description": "Laravel package for comprehensive API key management with domain restrictions, usage tracking, and secure authentication",
     "type": "library",
     "keywords": ["laravel", "api", "api-key", "authentication", "domain-restriction", "usage-tracking"],
